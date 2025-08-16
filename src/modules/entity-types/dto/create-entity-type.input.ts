@@ -1,5 +1,5 @@
 import { InputType, Field } from '@nestjs/graphql';
-import { JSONScalar } from '../../../lib/json.scalar';
+// import { JSONScalar } from '../../../lib/json.scalar';
 
 @InputType()
 export class CreateEntityTypeInput {
@@ -9,6 +9,6 @@ export class CreateEntityTypeInput {
   @Field()
   name: string;
 
-  @Field(() => JSONScalar)
-  schema: any;
+  @Field()
+  schema: string;
 }

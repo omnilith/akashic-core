@@ -6,12 +6,12 @@ import { EntityTypesRepo } from './entity-types.repo';
 export class EntityTypesService {
   constructor(private repo: EntityTypesRepo) {}
 
-  async create(namespace: string, name: string, schema: any) {
+  async create(namespace: string, name: string, schemaString: string) {
     // TODO: Validate JSON schema format
     return await this.repo.create({
       namespace,
       name,
-      schemaJson: schema,
+      schemaJson: JSON.parse(schemaString),
     });
   }
 
