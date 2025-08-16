@@ -29,6 +29,7 @@
     "@nestjs/graphql": "^13.1.0",
     "@nestjs/platform-express": "^11.0.1",
     "ajv": "^8.17.1",
+    "ajv-formats": "^3.0.1",
     "apollo-server-express": "^3.13.0",
     "drizzle-orm": "^0.44.4",
     "graphql": "^16.11.0",

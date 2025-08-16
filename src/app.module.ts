@@ -5,6 +5,7 @@ import { ApolloDriver, ApolloDriverConfig } from '@nestjs/apollo';
 import { AppService } from './app.service';
 import { DbModule } from './db/db.module';
 import { EntityTypesModule } from './modules/entity-types/entity-types.module';
+import { EntitiesModule } from './modules/entities/entities.module';
 import { JSONScalar } from './lib/json.scalar';
 
 @Module({
@@ -16,6 +17,7 @@ import { JSONScalar } from './lib/json.scalar';
     }),
     DbModule,
     EntityTypesModule,
+    EntitiesModule,
   ],
   controllers: [AppController],
   providers: [AppService, JSONScalar],
