@@ -25,3 +25,8 @@ export const entity = pgTable('entity', {
   createdAt: timestamp('created_at').defaultNow(),
   updatedAt: timestamp('updated_at').defaultNow(),
 });
+
+export type EntityType = typeof entityType.$inferSelect;
+export type InsertEntityType = typeof entityType.$inferInsert;
+export type Entity = typeof entity.$inferSelect;
+export type InsertEntity = typeof entity.$inferInsert;
