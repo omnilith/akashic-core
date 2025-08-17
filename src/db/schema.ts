@@ -57,6 +57,35 @@ export const relation = pgTable('relation', {
   createdAt: timestamp('created_at').defaultNow(),
 });
 
+export const eventLog = pgTable('event_log', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  eventType: text('event_type').notNull(), // 'entity.created', 'relation.deleted', etc.
+  resourceType: text('resource_type').notNull(), // 'entity', 'relation', 'entity_type'
+  resourceId: uuid('resource_id').notNull(),
+  namespace: text('namespace').notNull(),
+  payload: jsonb('payload').notNull(), // The actual event data
+  metadata: jsonb('metadata'), // Request ID, user info, etc.
+  timestamp: timestamp('timestamp').defaultNow().notNull(),
+});
+
+export const outbox = pgTable('outbox', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  eventLogId: uuid('event_log_id')
+    .notNull()
+    .references(() => eventLog.id),
+  destination: text('destination').notNull(), // 'websocket', 'webhook', 'notification'
+  payload: jsonb('payload').notNull(),
+  status: text('status').notNull().default('pending'), // 'pending', 'sent', 'failed'
+  attempts: integer('attempts').notNull().default(0),
+  nextRetryAt: timestamp('next_retry_at').defaultNow(),
+  createdAt: timestamp('created_at').defaultNow(),
+});
+
+export type EventLog = typeof eventLog.$inferSelect;
+export type InsertEventLog = typeof eventLog.$inferInsert;
+export type Outbox = typeof outbox.$inferSelect;
+export type InsertOutbox = typeof outbox.$inferInsert;
+
 export type RelationType = typeof relationType.$inferSelect;
 export type InsertRelationType = typeof relationType.$inferInsert;
 export type Relation = typeof relation.$inferSelect;

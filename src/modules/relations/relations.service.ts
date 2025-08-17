@@ -7,6 +7,7 @@ import {
 import { RelationsRepo } from './relations.repo';
 import { RelationTypesService } from '../relation-types/relation-types.service';
 import { EntitiesService } from '../entities/entities.service';
+import { EventsService } from '../events/events.service';
 
 @Injectable()
 export class RelationsService {
@@ -14,6 +15,7 @@ export class RelationsService {
     private relationsRepo: RelationsRepo,
     private relationTypesService: RelationTypesService,
     private entitiesService: EntitiesService,
+    private eventsService: EventsService,
   ) {}
 
   async create(
@@ -21,7 +23,7 @@ export class RelationsService {
     relationTypeId: string,
     fromEntityId: string,
     toEntityId: string,
-    metadata?: any,
+    metadata?: unknown,
   ) {
     // 1. Validate that the relation type exists
     const relationType =
@@ -55,13 +57,28 @@ export class RelationsService {
     }
 
     // 4. Create the relation
-    return await this.relationsRepo.create({
+    const relation = await this.relationsRepo.create({
       namespace,
       relationTypeId,
       fromEntityId,
       toEntityId,
       metadata,
     });
+
+    await this.eventsService.logEvent({
+      eventType: 'relation.created',
+      resourceType: 'relation',
+      resourceId: relation.id,
+      namespace,
+      payload: {
+        relationTypeId,
+        fromEntityId,
+        toEntityId,
+        metadata,
+      },
+    });
+
+    return relation;
   }
 
   async findAll(filters?: {
@@ -87,6 +104,18 @@ export class RelationsService {
     if (!deleted) {
       throw new BadRequestException('Failed to delete relation');
     }
+
+    await this.eventsService.logEvent({
+      eventType: 'relation.deleted',
+      resourceType: 'relation',
+      resourceId: id,
+      namespace: relation.namespace,
+      payload: {
+        relationTypeId: relation.relationTypeId,
+        fromEntityId: relation.fromEntityId,
+        toEntityId: relation.toEntityId,
+      },
+    });
 
     return relation;
   }

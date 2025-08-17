@@ -2,12 +2,14 @@
 import { Injectable, BadRequestException } from '@nestjs/common';
 import { RelationTypesRepo } from './relation-types.repo';
 import { EntityTypesService } from '../entity-types/entity-types.service';
+import { EventsService } from '../events/events.service';
 
 @Injectable()
 export class RelationTypesService {
   constructor(
     private repo: RelationTypesRepo,
     private entityTypesService: EntityTypesService,
+    private eventsService: EventsService,
   ) {}
 
   async create(
@@ -37,13 +39,28 @@ export class RelationTypesService {
       );
     }
 
-    return await this.repo.create({
+    const relationType = await this.repo.create({
       namespace,
       name,
       fromEntityTypeId,
       toEntityTypeId,
       cardinality,
     });
+
+    await this.eventsService.logEvent({
+      eventType: 'relationType.created',
+      resourceType: 'relationType',
+      resourceId: relationType.id,
+      namespace,
+      payload: {
+        name,
+        fromEntityTypeId,
+        toEntityTypeId,
+        cardinality,
+      },
+    });
+
+    return relationType;
   }
 
   async findAll(namespace?: string) {
