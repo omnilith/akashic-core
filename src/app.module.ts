@@ -6,6 +6,7 @@ import { AppService } from './app.service';
 import { DbModule } from './db/db.module';
 import { EntityTypesModule } from './modules/entity-types/entity-types.module';
 import { EntitiesModule } from './modules/entities/entities.module';
+import { RelationTypesModule } from './modules/relation-types/relation-types.module';
 import { JSONScalar } from './lib/json.scalar';
 
 @Module({
@@ -18,6 +19,7 @@ import { JSONScalar } from './lib/json.scalar';
     DbModule,
     EntityTypesModule,
     EntitiesModule,
+    RelationTypesModule,
   ],
   controllers: [AppController],
   providers: [AppService, JSONScalar],
