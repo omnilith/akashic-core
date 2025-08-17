@@ -1,98 +1,296 @@
-<p align="center">
-  <a href="http://nestjs.com/" target="blank"><img src="https://nestjs.com/img/logo-small.svg" width="120" alt="Nest Logo" /></a>
-</p>
+# Akashic Core
 
-[circleci-image]: https://img.shields.io/circleci/build/github/nestjs/nest/master?token=abc123def456
-[circleci-url]: https://circleci.com/gh/nestjs/nest
+**A federated creative engine where personal and organizational digital twins share the same ontology, processes are cultural rituals, and the public history of creation is part of the art.**
 
-  <p align="center">A progressive <a href="http://nodejs.org" target="_blank">Node.js</a> framework for building efficient and scalable server-side applications.</p>
-    <p align="center">
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/v/@nestjs/core.svg" alt="NPM Version" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/l/@nestjs/core.svg" alt="Package License" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/dm/@nestjs/common.svg" alt="NPM Downloads" /></a>
-<a href="https://circleci.com/gh/nestjs/nest" target="_blank"><img src="https://img.shields.io/circleci/build/github/nestjs/nest/master" alt="CircleCI" /></a>
-<a href="https://discord.gg/G7Qnnhy" target="_blank"><img src="https://img.shields.io/badge/discord-online-brightgreen.svg" alt="Discord"/></a>
-<a href="https://opencollective.com/nest#backer" target="_blank"><img src="https://opencollective.com/nest/backers/badge.svg" alt="Backers on Open Collective" /></a>
-<a href="https://opencollective.com/nest#sponsor" target="_blank"><img src="https://opencollective.com/nest/sponsors/badge.svg" alt="Sponsors on Open Collective" /></a>
-  <a href="https://paypal.me/kamilmysliwiec" target="_blank"><img src="https://img.shields.io/badge/Donate-PayPal-ff3f59.svg" alt="Donate us"/></a>
-    <a href="https://opencollective.com/nest#sponsor"  target="_blank"><img src="https://img.shields.io/badge/Support%20us-Open%20Collective-41B883.svg" alt="Support us"></a>
-  <a href="https://twitter.com/nestframework" target="_blank"><img src="https://img.shields.io/twitter/follow/nestframework.svg?style=social&label=Follow" alt="Follow us on Twitter"></a>
-</p>
-  <!--[![Backers on Open Collective](https://opencollective.com/nest/backers/badge.svg)](https://opencollective.com/nest#backer)
-  [![Sponsors on Open Collective](https://opencollective.com/nest/sponsors/badge.svg)](https://opencollective.com/nest#sponsor)-->
+## Overview
 
-## Description
+Akashic Core is an ontology-first backend platform for building personal twins that can grow into networks of collaborating nodes. Unlike traditional productivity or digital twin systems, Akashic Core treats data structure as a first-class creative medium.
 
-[Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
+### Key Principles
 
-## Project setup
+- **Ontology-first**: Entity types and relationships are defined as data (JSON Schema), not code
+- **Event-sourced**: Complete append-only history of every change
+- **Process-aware**: Workflows are semantic checklists with guards and actions
+- **Federation-ready**: Personal and organizational twins can link and share while maintaining autonomy
+- **Namespace-isolated**: Global, organizational, and personal data coexist safely
 
-```bash
-$ npm install
-```
+## Architecture
 
-## Compile and run the project
+### Core Modules
 
-```bash
-# development
-$ npm run start
+- **EntityTypes** - Define data schemas as JSON Schema documents
+- **Entities** - Create and validate instances against type definitions
+- **RelationTypes** - Define typed relationships between entity types
+- **Relations** - Create actual links between entity instances
+- **Processes** - Execute step-by-step workflows with state tracking
+- **Events** - Append-only log of all system changes
+- **Views** - Optimized read models (planned)
 
-# watch mode
-$ npm run start:dev
+### Technology Stack
 
-# production mode
-$ npm run start:prod
-```
+- **Backend**: NestJS with TypeScript
+- **Database**: PostgreSQL with Drizzle ORM
+- **API**: GraphQL with automatic schema generation
+- **Validation**: AJV for JSON Schema validation
+- **Events**: Custom event sourcing implementation
 
-## Run tests
+## Quick Start
+
+### Prerequisites
+
+- Node.js 18+
+- PostgreSQL
+- npm or yarn
+
+### Installation
 
 ```bash
-# unit tests
-$ npm run test
-
-# e2e tests
-$ npm run test:e2e
-
-# test coverage
-$ npm run test:cov
+git clone https://github.com/yourusername/akashic-core
+cd akashic-core
+npm install
 ```
 
-## Deployment
-
-When you're ready to deploy your NestJS application to production, there are some key steps you can take to ensure it runs as efficiently as possible. Check out the [deployment documentation](https://docs.nestjs.com/deployment) for more information.
-
-If you are looking for a cloud-based platform to deploy your NestJS application, check out [Mau](https://mau.nestjs.com), our official platform for deploying NestJS applications on AWS. Mau makes deployment straightforward and fast, requiring just a few simple steps:
+### Environment Setup
 
 ```bash
-$ npm install -g @nestjs/mau
-$ mau deploy
+# Copy environment template
+cp .env.example .env
+
+# Configure your database
+DATABASE_URL="postgresql://localhost:5432/akashic"
 ```
 
-With Mau, you can deploy your application in just a few clicks, allowing you to focus on building features rather than managing infrastructure.
+### Database Setup
 
-## Resources
+```bash
+# Generate and run migrations
+npm run db:generate
+npm run db:migrate
+```
 
-Check out a few resources that may come in handy when working with NestJS:
+### Start Development Server
 
-- Visit the [NestJS Documentation](https://docs.nestjs.com) to learn more about the framework.
-- For questions and support, please visit our [Discord channel](https://discord.gg/G7Qnnhy).
-- To dive deeper and get more hands-on experience, check out our official video [courses](https://courses.nestjs.com/).
-- Deploy your application to AWS with the help of [NestJS Mau](https://mau.nestjs.com) in just a few clicks.
-- Visualize your application graph and interact with the NestJS application in real-time using [NestJS Devtools](https://devtools.nestjs.com).
-- Need help with your project (part-time to full-time)? Check out our official [enterprise support](https://enterprise.nestjs.com).
-- To stay in the loop and get updates, follow us on [X](https://x.com/nestframework) and [LinkedIn](https://linkedin.com/company/nestjs).
-- Looking for a job, or have a job to offer? Check out our official [Jobs board](https://jobs.nestjs.com).
+```bash
+npm run start:dev
+```
 
-## Support
+Navigate to `http://localhost:3000/graphql` to access the GraphQL Playground.
 
-Nest is an MIT-licensed open source project. It can grow thanks to the sponsors and support by the amazing backers. If you'd like to join them, please [read more here](https://docs.nestjs.com/support).
+## Core Concepts
 
-## Stay in touch
+### Namespaces
 
-- Author - [Kamil Myśliwiec](https://twitter.com/kammysliwiec)
-- Website - [https://nestjs.com](https://nestjs.com/)
-- Twitter - [@nestframework](https://twitter.com/nestframework)
+Data is organized into namespaces for multi-tenancy:
 
-## License
+- `global` - Shared entity types and processes
+- `personal.username` - Individual user spaces
+- `org.company` - Organizational workspaces
+- `team.department` - Team-specific areas
 
-Nest is [MIT licensed](https://github.com/nestjs/nest/blob/master/LICENSE).
+### Entity-Centric Design
+
+Everything is an entity with typed relationships:
+
+```graphql
+# Define a Project type
+createEntityType(input: {
+  namespace: "personal.you"
+  name: "Project"
+  schema: "{\"type\": \"object\", \"properties\": {...}}"
+})
+
+# Create an actual project
+createEntity(input: {
+  namespace: "personal.you"
+  entityTypeId: "project-type-id"
+  data: "{\"title\": \"Build Personal Twin\", \"status\": \"active\"}"
+})
+```
+
+### Semantic Processes
+
+Workflows are data-driven and reusable:
+
+```graphql
+# Define a weekly review process
+createProcessDefinition(input: {
+  namespace: "personal.you"
+  name: "WeeklyReview"
+  steps: "[{\"id\": \"inbox_zero\", \"label\": \"Clear Inbox\"}, ...]"
+})
+
+# Execute the process
+startProcess(input: {
+  processDefId: "weekly-review-id"
+  namespace: "personal.you"
+})
+```
+
+## API Examples
+
+### Creating Entity Types
+
+```graphql
+mutation {
+  createEntityType(
+    input: {
+      namespace: "global"
+      name: "Person"
+      schema: "{\"type\": \"object\", \"properties\": {\"name\": {\"type\": \"string\"}, \"email\": {\"type\": \"string\", \"format\": \"email\"}}, \"required\": [\"name\"]}"
+    }
+  ) {
+    id
+    name
+    version
+  }
+}
+```
+
+### Linking Entities
+
+```graphql
+mutation {
+  createRelationType(
+    input: {
+      namespace: "personal.you"
+      name: "has_next_action"
+      fromEntityTypeId: "project-type-id"
+      toEntityTypeId: "task-type-id"
+      cardinality: "1..n"
+    }
+  ) {
+    id
+  }
+}
+
+mutation {
+  createRelation(
+    input: {
+      namespace: "personal.you"
+      relationTypeId: "has-next-action-id"
+      fromEntityId: "my-project-id"
+      toEntityId: "my-task-id"
+    }
+  ) {
+    id
+  }
+}
+```
+
+### Process Execution
+
+```graphql
+# Start a process
+mutation {
+  startProcess(
+    input: { namespace: "personal.you", processDefId: "daily-review-id" }
+  ) {
+    id
+    status
+    currentStep
+  }
+}
+
+# Advance through steps
+mutation {
+  advanceProcess(
+    input: {
+      instanceId: "process-instance-id"
+      stepInput: "{\"notes\": \"Completed inbox review\"}"
+    }
+  ) {
+    status
+    currentStep
+  }
+}
+```
+
+### Event History
+
+```graphql
+query {
+  events(namespace: "personal.you", limit: 10) {
+    eventType
+    resourceType
+    payload
+    timestamp
+  }
+}
+```
+
+## Development
+
+### Database Migrations
+
+```bash
+# Create new migration after schema changes
+npm run db:generate
+
+# Apply migrations
+npm run db:migrate
+
+# Open database GUI
+npm run db:studio
+```
+
+### Project Structure
+
+```
+src/
+├── db/
+│   ├── schema.ts              # Drizzle table definitions
+│   └── migrations/            # Database migrations
+├── lib/
+│   ├── validation.service.ts  # AJV JSON Schema validation
+│   └── json.scalar.ts         # GraphQL JSON scalar
+├── modules/
+│   ├── entity-types/          # Entity type management
+│   ├── entities/              # Entity CRUD operations
+│   ├── relation-types/        # Relationship type definitions
+│   ├── relations/             # Relationship management
+│   ├── processes/             # Workflow engine
+│   └── events/                # Event sourcing
+└── main.ts                    # Application entry point
+```
+
+## Roadmap
+
+### Immediate (MVP Complete ✅)
+
+- [x] Core entity and relationship system
+- [x] Process definitions and execution
+- [x] Event sourcing foundation
+- [x] Multi-namespace support
+
+### Next Phase
+
+- [ ] Guards and actions with CEL expressions
+- [ ] Read models and optimized views
+- [ ] Real-time subscriptions via WebSocket
+- [ ] Authentication and authorization
+
+### Future
+
+- [ ] Federation between instances
+- [ ] Visual process designer
+- [ ] Advanced querying and graph traversal
+- [ ] Public chronicle and aesthetic views
+
+## Philosophy
+
+Akashic Core embraces the idea that **how we structure information is itself a creative act**. By making ontology a first-class citizen, it enables:
+
+- **Personal knowledge graphs** that evolve with your thinking
+- **Organizational memory** that preserves context and decisions
+- **Creative workflows** that bridge personal and collective intelligence
+- **Living documentation** where the structure is part of the art
+
+The system doesn't impose rigid categories but provides tools for creating your own meaningful structures that can grow and federate with others.
+
+## Contributing
+
+This is currently a personal research project. As it matures, contribution guidelines will be established.
+
+---
+
+_"The Akashic Records are a compendium of all universal events, thoughts, words, emotions and intent ever to have occurred in the past, present, or future." - This system aims to be your personal Akashic record._
