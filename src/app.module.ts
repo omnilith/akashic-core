@@ -8,6 +8,7 @@ import { EntityTypesModule } from './modules/entity-types/entity-types.module';
 import { EntitiesModule } from './modules/entities/entities.module';
 import { RelationTypesModule } from './modules/relation-types/relation-types.module';
 import { RelationsModule } from './modules/relations/relations.module';
+import { EventsModule } from './modules/events/events.module';
 import { JSONScalar } from './lib/json.scalar';
 
 @Module({
@@ -22,6 +23,7 @@ import { JSONScalar } from './lib/json.scalar';
     EntitiesModule,
     RelationTypesModule,
     RelationsModule,
+    EventsModule,
   ],
   controllers: [AppController],
   providers: [AppService, JSONScalar],

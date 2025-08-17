@@ -8,7 +8,6 @@ export class EntityTypesRepo {
   constructor(private drizzle: DrizzleService) {}
 
   async create(data: InsertEntityType): Promise<EntityType> {
-    console.log('Creating entity type with data:', data);
     const [newEntityType] = await this.drizzle.db
       .insert(entityType)
       .values(data)
