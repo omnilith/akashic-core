@@ -7,6 +7,7 @@ import { DbModule } from './db/db.module';
 import { EntityTypesModule } from './modules/entity-types/entity-types.module';
 import { EntitiesModule } from './modules/entities/entities.module';
 import { RelationTypesModule } from './modules/relation-types/relation-types.module';
+import { ProcessesModule } from './modules/processes/processes.module';
 import { RelationsModule } from './modules/relations/relations.module';
 import { EventsModule } from './modules/events/events.module';
 import { JSONScalar } from './lib/json.scalar';
@@ -24,6 +25,7 @@ import { JSONScalar } from './lib/json.scalar';
     RelationTypesModule,
     RelationsModule,
     EventsModule,
+    ProcessesModule,
   ],
   controllers: [AppController],
   providers: [AppService, JSONScalar],
