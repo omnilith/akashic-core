@@ -20,7 +20,15 @@
     "test:e2e": "jest --config ./test/jest-e2e.json",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate",
-    "db:studio": "drizzle-kit studio"
+    "db:studio": "drizzle-kit studio",
+    "db:reset": "tsx scripts/reset-database.ts",
+    "seed": "tsx scripts/create-example-data.ts",
+    "cli": "tsx cli/akashic.ts",
+    "dev": "npm run start:dev",
+    "dev:clean": "npm run db:reset && npm run db:migrate && npm run seed && npm run dev",
+    "api:test": "tsx scripts/test-queries.ts",
+    "api:health": "tsx cli/akashic.ts health",
+    "docs:serve": "npx http-server ./docs -p 8080"
   },
   "dependencies": {
     "@nestjs/apollo": "^13.1.0",
@@ -28,6 +36,7 @@
     "@nestjs/core": "^11.0.1",
     "@nestjs/graphql": "^13.1.0",
     "@nestjs/platform-express": "^11.0.1",
+    "@nestjs/swagger": "^11.2.0",
     "ajv": "^8.17.1",
     "ajv-formats": "^3.0.1",
     "apollo-server-express": "^3.13.0",
@@ -36,7 +45,8 @@
     "graphql-scalars": "^1.24.2",
     "pg": "^8.16.3",
     "reflect-metadata": "^0.2.2",
-    "rxjs": "^7.8.1"
+    "rxjs": "^7.8.1",
+    "swagger-ui-express": "^5.0.1"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3.2.0",
