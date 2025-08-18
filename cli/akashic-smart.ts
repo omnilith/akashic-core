@@ -354,6 +354,134 @@ const commands = {
     }
   },
 
+  // Create a new entity type
+  async createType(args: string[]) {
+    console.log(`\n${colors.cyan}Create New Entity Type${colors.reset}\n`);
+    
+    // Get type name and namespace
+    const typeInfo = await inquirer.prompt([
+      {
+        type: 'input',
+        name: 'name',
+        message: 'Entity type name:',
+        validate: (input) => input.length > 0 || 'Type name is required',
+      },
+      {
+        type: 'input',
+        name: 'namespace',
+        message: 'Namespace:',
+        default: DEFAULT_NAMESPACE,
+      },
+    ]);
+    
+    // Build properties
+    const properties: any = {};
+    const required: string[] = [];
+    let addMore = true;
+    
+    while (addMore) {
+      const propInfo = await interactive.buildProperty();
+      properties[propInfo.name] = propInfo.property;
+      
+      if (propInfo.required) {
+        required.push(propInfo.name);
+      }
+      
+      const answer = await inquirer.prompt([
+        {
+          type: 'confirm',
+          name: 'addMore',
+          message: 'Add another property?',
+          default: true,
+        },
+      ]);
+      
+      addMore = answer.addMore;
+    }
+    
+    // Build the JSON schema
+    const schema = {
+      type: 'object',
+      properties,
+      required: required.length > 0 ? required : undefined,
+      additionalProperties: false,
+    };
+    
+    // Show the schema for confirmation
+    console.log(`\n${colors.cyan}Generated JSON Schema:${colors.reset}`);
+    console.log(JSON.stringify(schema, null, 2));
+    
+    const confirm = await inquirer.prompt([
+      {
+        type: 'confirm',
+        name: 'proceed',
+        message: 'Create this entity type?',
+        default: true,
+      },
+    ]);
+    
+    if (!confirm.proceed) {
+      console.log('Cancelled.');
+      return;
+    }
+    
+    try {
+      // Create the entity type
+      const mutation = `
+        mutation CreateEntityType($input: CreateEntityTypeInput!) {
+          createEntityType(input: $input) {
+            id
+            name
+            namespace
+            version
+          }
+        }
+      `;
+      
+      const result = await schemaHelper.graphqlRequest(mutation, {
+        input: {
+          namespace: typeInfo.namespace,
+          name: typeInfo.name,
+          schema: JSON.stringify(schema),
+        },
+      });
+      
+      const entityType = result.createEntityType;
+      console.log(`\n${colors.green}✅ Entity type created successfully!${colors.reset}`);
+      console.log(`   Name: ${entityType.name}`);
+      console.log(`   Namespace: ${entityType.namespace}`);
+      console.log(`   ID: ${entityType.id}`);
+      console.log(`   Version: ${entityType.version}`);
+      
+      // Offer to register an alias
+      const registerAlias = await inquirer.prompt([
+        {
+          type: 'confirm',
+          name: 'register',
+          message: 'Register an alias for easier access?',
+          default: true,
+        },
+      ]);
+      
+      if (registerAlias.register) {
+        const aliasName = await inquirer.prompt([
+          {
+            type: 'input',
+            name: 'alias',
+            message: 'Alias name:',
+            default: typeInfo.name.toLowerCase(),
+          },
+        ]);
+        
+        schemaHelper.registerTypeAlias(aliasName.alias, entityType.id);
+      }
+      
+    } catch (error: any) {
+      console.error(`${colors.red}Error: ${error.message}${colors.reset}`);
+      process.exit(1);
+    }
+  },
+
   // Show help
   help() {
     console.log(`
@@ -366,6 +494,7 @@ ${colors.cyan}Usage:${colors.reset}
 ${colors.cyan}Commands:${colors.reset}
   ${colors.green}register <name> <uuid>${colors.reset}  Register a type alias
   ${colors.green}types${colors.reset}                    List all types and aliases
+  ${colors.green}create-type${colors.reset}              Create a new entity type (schema)
   ${colors.green}create [type]${colors.reset}            Create entity (interactive if no type)
   ${colors.green}list <type>${colors.reset}              List entities of a type
   ${colors.green}update <type> <id>${colors.reset}       Update an entity
@@ -431,6 +560,9 @@ async function main() {
       break;
     case 'types':
       await commands.types();
+      break;
+    case 'create-type':
+      await commands.createType(commandArgs);
       break;
     case 'create':
       await commands.create(commandArgs);

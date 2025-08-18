@@ -257,6 +257,116 @@ function isValidDateTime(dateTime: string): boolean {
   return !isNaN(date.getTime());
 }
 
+// Build a simple property for JSON Schema
+export async function buildProperty(): Promise<any> {
+  const answers = await inquirer.prompt([
+    {
+      type: 'input',
+      name: 'name',
+      message: 'Property name:',
+      validate: (input) => input.length > 0 || 'Property name is required',
+    },
+    {
+      type: 'input',
+      name: 'description',
+      message: 'Property description (optional):',
+      default: '',
+    },
+    {
+      type: 'list',
+      name: 'type',
+      message: 'Property type:',
+      choices: ['string', 'number', 'boolean', 'array'],
+    },
+    {
+      type: 'confirm',
+      name: 'required',
+      message: 'Is this property required?',
+      default: false,
+    },
+  ]);
+
+  const property: any = { type: answers.type };
+
+  // Add description if provided
+  if (answers.description) {
+    property.description = answers.description;
+  }
+
+  // Add type-specific constraints
+  if (answers.type === 'string') {
+    const stringConstraints = await inquirer.prompt([
+      {
+        type: 'number',
+        name: 'minLength',
+        message: 'Minimum length (press enter to skip):',
+        filter: (val) => (val === '' ? undefined : Number(val)),
+      },
+      {
+        type: 'number',
+        name: 'maxLength',
+        message: 'Maximum length (press enter to skip):',
+        filter: (val) => (val === '' ? undefined : Number(val)),
+      },
+      {
+        type: 'input',
+        name: 'enumValues',
+        message: 'Enum values (comma-separated, press enter to skip):',
+        filter: (val) =>
+          val ? val.split(',').map((v: string) => v.trim()) : undefined,
+      },
+    ]);
+
+    if (stringConstraints.minLength !== undefined)
+      property.minLength = stringConstraints.minLength;
+    if (stringConstraints.maxLength !== undefined)
+      property.maxLength = stringConstraints.maxLength;
+    if (stringConstraints.enumValues)
+      property.enum = stringConstraints.enumValues;
+  }
+
+  if (answers.type === 'number') {
+    const numberConstraints = await inquirer.prompt([
+      {
+        type: 'number',
+        name: 'minimum',
+        message: 'Minimum value (press enter to skip):',
+        filter: (val) => (val === '' ? undefined : Number(val)),
+      },
+      {
+        type: 'number',
+        name: 'maximum',
+        message: 'Maximum value (press enter to skip):',
+        filter: (val) => (val === '' ? undefined : Number(val)),
+      },
+    ]);
+
+    if (numberConstraints.minimum !== undefined)
+      property.minimum = numberConstraints.minimum;
+    if (numberConstraints.maximum !== undefined)
+      property.maximum = numberConstraints.maximum;
+  }
+
+  if (answers.type === 'array') {
+    const arrayConstraints = await inquirer.prompt([
+      {
+        type: 'list',
+        name: 'itemType',
+        message: 'Array item type:',
+        choices: ['string', 'number', 'boolean'],
+      },
+    ]);
+
+    property.items = { type: arrayConstraints.itemType };
+  }
+
+  return {
+    name: answers.name,
+    property,
+    required: answers.required,
+  };
+}
+
 // Quick input mode - parse key=value pairs
 export function parseQuickInput(args: string[]): any {
   const result: any = {};
