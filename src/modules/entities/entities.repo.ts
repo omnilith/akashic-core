@@ -2,7 +2,7 @@
 import { Injectable } from '@nestjs/common';
 import { DrizzleService } from '../../db/drizzle.service';
 import { entity, InsertEntity, Entity } from '../../db/schema';
-import { eq } from 'drizzle-orm';
+import { eq, and, SQL } from 'drizzle-orm';
 
 @Injectable()
 export class EntitiesRepo {
@@ -17,12 +17,22 @@ export class EntitiesRepo {
     return newEntity;
   }
 
-  async findAll(namespace?: string): Promise<Entity[]> {
+  async findAll(namespace?: string, entityTypeId?: string): Promise<Entity[]> {
+    const conditions: SQL[] = [];
+
     if (namespace) {
+      conditions.push(eq(entity.namespace, namespace));
+    }
+
+    if (entityTypeId) {
+      conditions.push(eq(entity.entityTypeId, entityTypeId));
+    }
+
+    if (conditions.length > 0) {
       return await this.drizzle.db
         .select()
         .from(entity)
-        .where(eq(entity.namespace, namespace));
+        .where(conditions.length === 1 ? conditions[0] : and(...conditions));
     }
 
     return await this.drizzle.db.select().from(entity);

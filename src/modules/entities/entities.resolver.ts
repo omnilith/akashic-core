@@ -18,7 +18,10 @@ export class EntitiesResolver {
   }
 
   @Query(() => [EntityDto])
-  async entities(@Args('namespace', { nullable: true }) namespace?: string) {
-    return await this.entitiesService.findAll(namespace);
+  async entities(
+    @Args('namespace', { nullable: true }) namespace?: string,
+    @Args('entityTypeId', { nullable: true }) entityTypeId?: string,
+  ) {
+    return await this.entitiesService.findAll(namespace, entityTypeId);
   }
 }

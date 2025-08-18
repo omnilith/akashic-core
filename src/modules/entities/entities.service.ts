@@ -56,8 +56,8 @@ export class EntitiesService {
     return entity;
   }
 
-  async findAll(namespace?: string) {
-    return await this.entitiesRepo.findAll(namespace);
+  async findAll(namespace?: string, entityTypeId?: string) {
+    return await this.entitiesRepo.findAll(namespace, entityTypeId);
   }
 
   async findById(id: string) {
