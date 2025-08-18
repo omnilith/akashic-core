@@ -1,7 +1,7 @@
 // src/modules/entity-types/entity-types.service.ts
 import { Injectable, BadRequestException } from '@nestjs/common';
 import { EntityTypesRepo } from './entity-types.repo';
-import { ValidationService } from 'src/lib/validation.service';
+import { ValidationService } from '../../lib/validation.service';
 import { EventsService } from '../events/events.service';
 
 @Injectable()
