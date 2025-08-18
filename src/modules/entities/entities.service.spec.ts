@@ -103,7 +103,7 @@ describe('EntitiesService', () => {
       expect(entityTypesService.findById).toHaveBeenCalledWith(entityTypeId);
       expect(validationService.validateEntityData).toHaveBeenCalledWith(
         mockEntityType.schemaJson,
-        validData
+        validData,
       );
       expect(repo.create).toHaveBeenCalledWith({
         namespace,
@@ -129,7 +129,7 @@ describe('EntitiesService', () => {
       entityTypesService.findById.mockResolvedValue(null);
 
       await expect(
-        service.create(namespace, entityTypeId, validData)
+        service.create(namespace, entityTypeId, validData),
       ).rejects.toThrow(BadRequestException);
 
       expect(validationService.validateEntityData).not.toHaveBeenCalled();
@@ -163,7 +163,7 @@ describe('EntitiesService', () => {
       });
 
       await expect(
-        service.create(namespace, entityTypeId, invalidData)
+        service.create(namespace, entityTypeId, invalidData),
       ).rejects.toThrow(BadRequestException);
 
       expect(repo.create).not.toHaveBeenCalled();
@@ -255,5 +255,4 @@ describe('EntitiesService', () => {
       expect(result).toBeNull();
     });
   });
-
 });

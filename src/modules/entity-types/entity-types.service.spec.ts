@@ -76,7 +76,9 @@ describe('EntityTypesService', () => {
 
       const result = await service.create(namespace, name, schemaString);
 
-      expect(validationService.validateSchema).toHaveBeenCalledWith(validSchema);
+      expect(validationService.validateSchema).toHaveBeenCalledWith(
+        validSchema,
+      );
       expect(repo.create).toHaveBeenCalledWith({
         namespace,
         name,
@@ -98,16 +100,16 @@ describe('EntityTypesService', () => {
 
     it('should throw BadRequestException for invalid schema', async () => {
       const invalidSchemaString = JSON.stringify({ invalid: 'schema' });
-      
+
       validationService.validateSchema.mockReturnValue({
         valid: false,
         errors: ['Invalid type: undefined'],
       });
 
       await expect(
-        service.create(namespace, name, invalidSchemaString)
+        service.create(namespace, name, invalidSchemaString),
       ).rejects.toThrow(BadRequestException);
-      
+
       expect(repo.create).not.toHaveBeenCalled();
       expect(eventsService.logEvent).not.toHaveBeenCalled();
     });
@@ -116,9 +118,9 @@ describe('EntityTypesService', () => {
       const invalidJson = '{ invalid json }';
 
       await expect(
-        service.create(namespace, name, invalidJson)
+        service.create(namespace, name, invalidJson),
       ).rejects.toThrow();
-      
+
       expect(validationService.validateSchema).not.toHaveBeenCalled();
       expect(repo.create).not.toHaveBeenCalled();
     });

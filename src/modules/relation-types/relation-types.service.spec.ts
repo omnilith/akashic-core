@@ -92,10 +92,12 @@ describe('RelationTypesService', () => {
         name,
         fromEntityTypeId,
         toEntityTypeId,
-        cardinality
+        cardinality,
       );
 
-      expect(entityTypesService.findById).toHaveBeenCalledWith(fromEntityTypeId);
+      expect(entityTypesService.findById).toHaveBeenCalledWith(
+        fromEntityTypeId,
+      );
       expect(entityTypesService.findById).toHaveBeenCalledWith(toEntityTypeId);
       expect(repo.create).toHaveBeenCalledWith({
         namespace,
@@ -123,10 +125,18 @@ describe('RelationTypesService', () => {
       entityTypesService.findById.mockResolvedValueOnce(null);
 
       await expect(
-        service.create(namespace, name, fromEntityTypeId, toEntityTypeId, cardinality)
+        service.create(
+          namespace,
+          name,
+          fromEntityTypeId,
+          toEntityTypeId,
+          cardinality,
+        ),
       ).rejects.toThrow(BadRequestException);
 
-      expect(entityTypesService.findById).toHaveBeenCalledWith(fromEntityTypeId);
+      expect(entityTypesService.findById).toHaveBeenCalledWith(
+        fromEntityTypeId,
+      );
       expect(repo.create).not.toHaveBeenCalled();
       expect(eventsService.logEvent).not.toHaveBeenCalled();
     });
@@ -137,10 +147,18 @@ describe('RelationTypesService', () => {
         .mockResolvedValueOnce(null);
 
       await expect(
-        service.create(namespace, name, fromEntityTypeId, toEntityTypeId, cardinality)
+        service.create(
+          namespace,
+          name,
+          fromEntityTypeId,
+          toEntityTypeId,
+          cardinality,
+        ),
       ).rejects.toThrow(BadRequestException);
 
-      expect(entityTypesService.findById).toHaveBeenCalledWith(fromEntityTypeId);
+      expect(entityTypesService.findById).toHaveBeenCalledWith(
+        fromEntityTypeId,
+      );
       expect(entityTypesService.findById).toHaveBeenCalledWith(toEntityTypeId);
       expect(repo.create).not.toHaveBeenCalled();
       expect(eventsService.logEvent).not.toHaveBeenCalled();
@@ -154,7 +172,13 @@ describe('RelationTypesService', () => {
         .mockResolvedValueOnce(mockToEntityType);
 
       await expect(
-        service.create(namespace, name, fromEntityTypeId, toEntityTypeId, invalidCardinality)
+        service.create(
+          namespace,
+          name,
+          fromEntityTypeId,
+          toEntityTypeId,
+          invalidCardinality,
+        ),
       ).rejects.toThrow(BadRequestException);
 
       expect(repo.create).not.toHaveBeenCalled();
@@ -187,7 +211,7 @@ describe('RelationTypesService', () => {
           name,
           fromEntityTypeId,
           toEntityTypeId,
-          validCardinality
+          validCardinality,
         );
 
         expect(result.cardinality).toEqual(validCardinality);

@@ -234,18 +234,30 @@ describe('EventsService', () => {
 
       repo.findByResource.mockResolvedValue(mockEvents);
 
-      const result = await service.getEventsByResource(resourceType, resourceId);
+      const result = await service.getEventsByResource(
+        resourceType,
+        resourceId,
+      );
 
-      expect(repo.findByResource).toHaveBeenCalledWith(resourceType, resourceId);
+      expect(repo.findByResource).toHaveBeenCalledWith(
+        resourceType,
+        resourceId,
+      );
       expect(result).toEqual(mockEvents);
     });
 
     it('should return empty array when no events found for resource', async () => {
       repo.findByResource.mockResolvedValue([]);
 
-      const result = await service.getEventsByResource('entity', 'non-existent');
+      const result = await service.getEventsByResource(
+        'entity',
+        'non-existent',
+      );
 
-      expect(repo.findByResource).toHaveBeenCalledWith('entity', 'non-existent');
+      expect(repo.findByResource).toHaveBeenCalledWith(
+        'entity',
+        'non-existent',
+      );
       expect(result).toEqual([]);
     });
   });

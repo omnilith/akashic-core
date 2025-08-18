@@ -41,4 +41,4 @@ async function bootstrap() {
   console.log(`🎮 GraphQL Playground: http://localhost:${port}/graphql`);
 }
 
-await (async () => bootstrap())();
+bootstrap();

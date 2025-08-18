@@ -115,10 +115,12 @@ describe('RelationsService', () => {
         relationTypeId,
         fromEntityId,
         toEntityId,
-        metadata
+        metadata,
       );
 
-      expect(relationTypesService.findById).toHaveBeenCalledWith(relationTypeId);
+      expect(relationTypesService.findById).toHaveBeenCalledWith(
+        relationTypeId,
+      );
       expect(entitiesService.findById).toHaveBeenCalledWith(fromEntityId);
       expect(entitiesService.findById).toHaveBeenCalledWith(toEntityId);
       expect(repo.create).toHaveBeenCalledWith({
@@ -165,7 +167,7 @@ describe('RelationsService', () => {
         namespace,
         relationTypeId,
         fromEntityId,
-        toEntityId
+        toEntityId,
       );
 
       expect(repo.create).toHaveBeenCalledWith({
@@ -182,7 +184,7 @@ describe('RelationsService', () => {
       relationTypesService.findById.mockResolvedValue(null);
 
       await expect(
-        service.create(namespace, relationTypeId, fromEntityId, toEntityId)
+        service.create(namespace, relationTypeId, fromEntityId, toEntityId),
       ).rejects.toThrow(BadRequestException);
 
       expect(entitiesService.findById).not.toHaveBeenCalled();
@@ -194,7 +196,7 @@ describe('RelationsService', () => {
       entitiesService.findById.mockResolvedValueOnce(null);
 
       await expect(
-        service.create(namespace, relationTypeId, fromEntityId, toEntityId)
+        service.create(namespace, relationTypeId, fromEntityId, toEntityId),
       ).rejects.toThrow(BadRequestException);
 
       expect(repo.create).not.toHaveBeenCalled();
@@ -207,7 +209,7 @@ describe('RelationsService', () => {
         .mockResolvedValueOnce(null);
 
       await expect(
-        service.create(namespace, relationTypeId, fromEntityId, toEntityId)
+        service.create(namespace, relationTypeId, fromEntityId, toEntityId),
       ).rejects.toThrow(BadRequestException);
 
       expect(repo.create).not.toHaveBeenCalled();
@@ -225,7 +227,7 @@ describe('RelationsService', () => {
         .mockResolvedValueOnce(mockToEntity);
 
       await expect(
-        service.create(namespace, relationTypeId, fromEntityId, toEntityId)
+        service.create(namespace, relationTypeId, fromEntityId, toEntityId),
       ).rejects.toThrow(BadRequestException);
 
       expect(repo.create).not.toHaveBeenCalled();
@@ -243,7 +245,7 @@ describe('RelationsService', () => {
         .mockResolvedValueOnce(wrongToEntity);
 
       await expect(
-        service.create(namespace, relationTypeId, fromEntityId, toEntityId)
+        service.create(namespace, relationTypeId, fromEntityId, toEntityId),
       ).rejects.toThrow(BadRequestException);
 
       expect(repo.create).not.toHaveBeenCalled();
@@ -400,7 +402,9 @@ describe('RelationsService', () => {
     it('should throw NotFoundException when relation not found', async () => {
       repo.findById.mockResolvedValue(null);
 
-      await expect(service.delete(relationId)).rejects.toThrow(NotFoundException);
+      await expect(service.delete(relationId)).rejects.toThrow(
+        NotFoundException,
+      );
 
       expect(repo.delete).not.toHaveBeenCalled();
       expect(eventsService.logEvent).not.toHaveBeenCalled();
@@ -410,7 +414,9 @@ describe('RelationsService', () => {
       repo.findById.mockResolvedValue(mockRelation);
       repo.delete.mockResolvedValue(false);
 
-      await expect(service.delete(relationId)).rejects.toThrow(BadRequestException);
+      await expect(service.delete(relationId)).rejects.toThrow(
+        BadRequestException,
+      );
 
       expect(eventsService.logEvent).not.toHaveBeenCalled();
     });
