@@ -304,13 +304,15 @@ const commands = {
       );
       process.exit(1);
     }
-    const updates = interactive.parseQuickInput(args.slice(2));
 
     try {
-      // Get current entity data - fetch all and filter client-side
+      // Resolve type name to type ID for filtering
+      const typeId = schemaHelper.resolveTypeId(typeName);
+
+      // Get current entity data - filter by type for efficiency
       const query = `
-        query GetEntities {
-          entities {
+        query GetEntities($entityTypeId: String) {
+          entities(entityTypeId: $entityTypeId) {
             id
             data
             entityTypeId
@@ -318,12 +320,21 @@ const commands = {
         }
       `;
 
-      const entityResult = await schemaHelper.graphqlRequest(query, {});
+      const entityResult = await schemaHelper.graphqlRequest(query, {
+        entityTypeId: typeId,
+      });
 
       const entity = entityResult.entities.find((e: any) => e.id === entityId);
 
       if (!entity) {
-        throw new Error(`Entity not found: ${entityId}`);
+        throw new Error(`Entity not found: ${entityId} of type ${typeName}`);
+      }
+
+      // Verify the entity type matches what was requested
+      if (entity.entityTypeId !== typeId) {
+        throw new Error(
+          `Entity ${entityId} is not of type ${typeName}. It has type ID: ${entity.entityTypeId}`,
+        );
       }
 
       const currentData = entity.data;
@@ -331,6 +342,27 @@ const commands = {
       // Get schema for validation
       const schema = await schemaHelper.getSchema(typeName);
       const fields = schemaHelper.parseSchema(schema);
+
+      let updates: any = {};
+
+      // Check if we have field=value pairs or need interactive mode
+      if (args.length > 2) {
+        // Parse field=value pairs from command line
+        updates = interactive.parseQuickInput(args.slice(2));
+      } else {
+        // Interactive mode - show current values and let user update
+        console.log(
+          `\n${colors.cyan}Current entity data:${colors.reset}`,
+        );
+        console.log(JSON.stringify(currentData, null, 2));
+        
+        updates = await interactive.promptForEntityUpdate(fields, currentData);
+        
+        if (Object.keys(updates).length === 0) {
+          console.log(`\n${colors.yellow}No changes made.${colors.reset}`);
+          return;
+        }
+      }
 
       // Merge updates
       const newData = { ...currentData, ...updates };

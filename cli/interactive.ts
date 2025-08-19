@@ -50,11 +50,51 @@ export async function promptForEntity(fields: FieldInfo[]): Promise<any> {
   return result;
 }
 
+// Build prompts for updating entity - shows current values
+export async function promptForEntityUpdate(
+  fields: FieldInfo[],
+  currentData: any,
+): Promise<any> {
+  const prompts: any[] = [];
+
+  for (const field of fields) {
+    const prompt = buildPrompt(field, currentData[field.name]);
+    if (prompt) {
+      prompts.push(prompt);
+    }
+  }
+
+  if (prompts.length === 0) {
+    return {};
+  }
+
+  console.log(
+    `\n${colors.cyan}Update entity fields (current values shown):${colors.reset}\n`,
+  );
+
+  const answers = await inquirer.prompt(prompts);
+
+  // Post-process answers - only include changed values
+  const result: any = {};
+  for (const field of fields) {
+    if (answers[field.name] !== undefined && answers[field.name] !== '') {
+      const processed = processAnswer(field, answers[field.name]);
+      // Only include if different from current value
+      if (JSON.stringify(processed) !== JSON.stringify(currentData[field.name])) {
+        result[field.name] = processed;
+      }
+    }
+  }
+
+  return result;
+}
+
 // Build a single prompt based on field type
-function buildPrompt(field: FieldInfo): any {
+function buildPrompt(field: FieldInfo, currentValue?: any): any {
   const base = {
     name: field.name,
     message: formatFieldMessage(field),
+    default: currentValue !== undefined ? currentValue : field.default,
   };
 
   // Handle enums
@@ -63,7 +103,6 @@ function buildPrompt(field: FieldInfo): any {
       ...base,
       type: 'list',
       choices: field.enum,
-      default: field.default,
     };
   }
 
@@ -73,7 +112,6 @@ function buildPrompt(field: FieldInfo): any {
       return {
         ...base,
         type: 'confirm',
-        default: field.default !== undefined ? field.default : false,
       };
 
     case 'number':
@@ -81,7 +119,6 @@ function buildPrompt(field: FieldInfo): any {
       return {
         ...base,
         type: 'number',
-        default: field.default,
         validate: (input: any) => {
           if (!field.required && (input === '' || input === undefined)) {
             return true;
@@ -127,7 +164,6 @@ function buildPrompt(field: FieldInfo): any {
       const inputPrompt: any = {
         ...base,
         type: 'input',
-        default: field.default,
       };
 
       // Add validation
