@@ -1,0 +1,343 @@
+{
+  "entityTypes": [
+    {
+      "id": "feature-type-v1",
+      "name": "Feature",
+      "namespace": "development",
+      "version": 1,
+      "schema": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "Feature name"
+          },
+          "description": {
+            "type": "string",
+            "description": "What this feature does"
+          },
+          "category": {
+            "type": "string",
+            "enum": [
+              "ontology-building",
+              "data-import",
+              "visualization",
+              "developer-experience",
+              "automation"
+            ],
+            "description": "Feature category"
+          },
+          "priority": {
+            "type": "string",
+            "enum": ["immediate", "high", "medium", "low"],
+            "description": "Implementation priority"
+          },
+          "effort": {
+            "type": "string",
+            "enum": ["hours", "days", "week", "weeks"],
+            "description": "Estimated implementation effort"
+          },
+          "status": {
+            "type": "string",
+            "enum": ["planned", "in-progress", "completed", "blocked"],
+            "default": "planned"
+          },
+          "benefits": {
+            "type": "array",
+            "items": { "type": "string" },
+            "description": "Key benefits this feature provides"
+          }
+        },
+        "required": ["name", "description", "category", "priority", "effort"]
+      }
+    },
+    {
+      "id": "implementation-task-type-v1",
+      "name": "ImplementationTask",
+      "namespace": "development",
+      "version": 1,
+      "schema": {
+        "type": "object",
+        "properties": {
+          "title": {
+            "type": "string",
+            "description": "Task title"
+          },
+          "description": {
+            "type": "string",
+            "description": "Detailed task description"
+          },
+          "featureId": {
+            "type": "string",
+            "description": "ID of the parent feature"
+          },
+          "status": {
+            "type": "string",
+            "enum": ["todo", "in-progress", "done", "blocked"],
+            "default": "todo"
+          },
+          "effort": {
+            "type": "string",
+            "enum": ["30min", "1hr", "2hr", "4hr", "1day", "2day"],
+            "description": "Estimated effort"
+          },
+          "technicalNotes": {
+            "type": "string",
+            "description": "Implementation notes"
+          }
+        },
+        "required": ["title", "featureId"]
+      }
+    }
+  ],
+  "entities": [
+    {
+      "type": "Feature",
+      "id": "feature-ontology-templates",
+      "namespace": "development",
+      "data": {
+        "name": "Ontology Templates",
+        "description": "Pre-built ontology templates for common domains (Organization, Knowledge Base, Product Catalog, IoT)",
+        "category": "ontology-building",
+        "priority": "immediate",
+        "effort": "days",
+        "status": "planned",
+        "benefits": [
+          "Quick start for new users",
+          "Best practices baked in",
+          "Common patterns readily available",
+          "Reduces time to value from hours to minutes"
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "feature-yaml-definitions",
+      "namespace": "development",
+      "data": {
+        "name": "YAML/TOML Ontology Definitions",
+        "description": "Define entire ontologies in simple YAML/TOML files with 'akashic apply' command",
+        "category": "developer-experience",
+        "priority": "immediate",
+        "effort": "days",
+        "status": "planned",
+        "benefits": [
+          "Version control friendly",
+          "Human readable",
+          "Bulk operations",
+          "Infrastructure as code approach"
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "feature-csv-import",
+      "namespace": "development",
+      "data": {
+        "name": "CSV Import with Schema Inference",
+        "description": "Import CSV files and automatically infer schema from headers and data types",
+        "category": "data-import",
+        "priority": "immediate",
+        "effort": "days",
+        "status": "planned",
+        "benefits": [
+          "Rapid data onboarding",
+          "Works with existing spreadsheets",
+          "No manual schema creation needed",
+          "Bulk data import"
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "feature-interactive-repl",
+      "namespace": "development",
+      "data": {
+        "name": "Interactive Ontology REPL",
+        "description": "Conversational interface for building ontologies with natural commands",
+        "category": "developer-experience",
+        "priority": "high",
+        "effort": "week",
+        "status": "planned",
+        "benefits": [
+          "More intuitive than current CLI",
+          "Immediate feedback",
+          "Tab completion",
+          "Command history"
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "feature-natural-language",
+      "namespace": "development",
+      "data": {
+        "name": "Natural Language Schema Builder",
+        "description": "Describe schemas in plain English and have them automatically created",
+        "category": "ontology-building",
+        "priority": "medium",
+        "effort": "week",
+        "status": "planned",
+        "benefits": [
+          "Zero learning curve",
+          "Accessible to non-developers",
+          "Faster prototyping",
+          "AI-assisted development"
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "feature-visual-explorer",
+      "namespace": "development",
+      "data": {
+        "name": "ASCII/Terminal Ontology Visualizer",
+        "description": "Display ontology structure as ASCII art graphs in the terminal",
+        "category": "visualization",
+        "priority": "high",
+        "effort": "days",
+        "status": "planned",
+        "benefits": [
+          "See relationships at a glance",
+          "Works in terminal",
+          "No browser needed",
+          "Export to various formats"
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "feature-bulk-operations",
+      "namespace": "development",
+      "data": {
+        "name": "Bulk Import from Multiple Formats",
+        "description": "Import from JSON, SQL schemas, OpenAPI specs, Excel files",
+        "category": "data-import",
+        "priority": "medium",
+        "effort": "weeks",
+        "status": "planned",
+        "benefits": [
+          "Migrate existing systems",
+          "Support various data sources",
+          "Automated schema conversion",
+          "Enterprise ready"
+        ]
+      }
+    },
+    {
+      "type": "ImplementationTask",
+      "id": "task-template-structure",
+      "namespace": "development",
+      "data": {
+        "title": "Design template structure",
+        "description": "Create JSON structure for ontology templates with types, relations, and sample data",
+        "featureId": "feature-ontology-templates",
+        "status": "todo",
+        "effort": "2hr",
+        "technicalNotes": "Store templates in data/templates/ directory"
+      }
+    },
+    {
+      "type": "ImplementationTask",
+      "id": "task-template-command",
+      "namespace": "development",
+      "data": {
+        "title": "Implement 'akashic ontology' command",
+        "description": "Add new CLI command to list and apply templates",
+        "featureId": "feature-ontology-templates",
+        "status": "todo",
+        "effort": "4hr",
+        "technicalNotes": "Add to cli/akashic-smart.ts with --template and --list flags"
+      }
+    },
+    {
+      "type": "ImplementationTask",
+      "id": "task-yaml-parser",
+      "namespace": "development",
+      "data": {
+        "title": "Add YAML parser",
+        "description": "Install and configure YAML parsing library",
+        "featureId": "feature-yaml-definitions",
+        "status": "todo",
+        "effort": "30min",
+        "technicalNotes": "Use js-yaml or similar library"
+      }
+    },
+    {
+      "type": "ImplementationTask",
+      "id": "task-yaml-schema",
+      "namespace": "development",
+      "data": {
+        "title": "Define YAML schema format",
+        "description": "Create specification for how ontologies are defined in YAML",
+        "featureId": "feature-yaml-definitions",
+        "status": "todo",
+        "effort": "2hr",
+        "technicalNotes": "Support types, relations, namespaces, and metadata"
+      }
+    },
+    {
+      "type": "ImplementationTask",
+      "id": "task-apply-command",
+      "namespace": "development",
+      "data": {
+        "title": "Implement 'akashic apply' command",
+        "description": "Process YAML files and create entities/types",
+        "featureId": "feature-yaml-definitions",
+        "status": "todo",
+        "effort": "1day",
+        "technicalNotes": "Should support dry-run mode and show diff"
+      }
+    },
+    {
+      "type": "ImplementationTask",
+      "id": "task-csv-parser",
+      "namespace": "development",
+      "data": {
+        "title": "Add CSV parsing library",
+        "description": "Install csv-parse or similar",
+        "featureId": "feature-csv-import",
+        "status": "todo",
+        "effort": "30min",
+        "technicalNotes": "Consider streaming for large files"
+      }
+    },
+    {
+      "type": "ImplementationTask",
+      "id": "task-schema-inference",
+      "namespace": "development",
+      "data": {
+        "title": "Build schema inference engine",
+        "description": "Analyze CSV data to determine field types",
+        "featureId": "feature-csv-import",
+        "status": "todo",
+        "effort": "1day",
+        "technicalNotes": "Detect strings, numbers, dates, booleans, emails, URLs"
+      }
+    },
+    {
+      "type": "ImplementationTask",
+      "id": "task-import-command",
+      "namespace": "development",
+      "data": {
+        "title": "Create 'akashic import' command",
+        "description": "CLI command for importing CSV with options",
+        "featureId": "feature-csv-import",
+        "status": "todo",
+        "effort": "4hr",
+        "technicalNotes": "Support --infer-schema, --type-name, --namespace flags"
+      }
+    }
+  ],
+  "relationTypes": [
+    {
+      "id": "implements-relation-type",
+      "name": "implements",
+      "namespace": "development",
+      "fromEntityTypeId": "implementation-task-type-v1",
+      "toEntityTypeId": "feature-type-v1",
+      "cardinality": "n..1",
+      "description": "Task implements feature"
+    }
+  ]
+}

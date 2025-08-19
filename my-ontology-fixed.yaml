@@ -1,0 +1,240 @@
+types:
+  SimpleTest:
+    fields: {}
+    namespace: test
+  Meeting:
+    fields:
+      title:
+        type: string
+        minLength: 1
+        required: true
+      agenda: array
+      endTime: string, required
+      location: object, required
+      attendees: array
+      recurring: object
+      startTime: string, required
+      actionItems: array
+      meetingType:
+        type: string
+        enum:
+          - standup
+          - planning
+          - retrospective
+          - one-on-one
+          - all-hands
+          - client-call
+        required: true
+    namespace: work.acme
+  Project:
+    fields:
+      title:
+        type: string
+        minLength: 1
+        required: true
+      status: string, enum[planning|active|done], required
+      priority: string, enum[low|medium|high]
+    namespace: personal.you
+  NextAction:
+    fields:
+      status: string, enum[todo|doing|done]
+      context: string, enum[computer|phone|errands]
+      description: string
+    namespace: personal.you
+  Task:
+    fields:
+      tags:
+        type: array
+        description: Task tags/labels
+      title:
+        type: string
+        minLength: 1
+        maxLength: 200
+        description: Task title
+        required: true
+      status:
+        type: string
+        enum:
+          - todo
+          - in_progress
+          - done
+          - blocked
+          - cancelled
+        description: Current task status
+        required: true
+      blocked:
+        type: boolean
+        description: Is this task blocked?
+      dueDate:
+        type: string
+        description: Task due date
+      assignee:
+        type: string
+        description: Person assigned to this task
+      priority:
+        type: string
+        description: Task priority level
+        required: true
+      actualHours:
+        type: number
+        min: 0
+        description: Actual hours spent
+      description:
+        type: string
+        description: Detailed task description
+      blockedReason:
+        type: string
+        description: Reason why task is blocked
+      estimatedHours:
+        type: number
+        min: 0
+        max: 1000
+        description: Estimated hours to complete
+    namespace: tasks
+  Person:
+    fields:
+      name: string
+      email: string
+    namespace: test.events
+  User:
+    fields:
+      bio:
+        type: string
+        maxLength: 500
+      email: string, required
+      fullName: string, required
+      joinedAt: string
+      username:
+        type: string
+        minLength: 3
+        maxLength: 30
+        required: true
+    namespace: example
+  Post:
+    fields:
+      tags: array
+      title:
+        type: string
+        minLength: 1
+        maxLength: 200
+        required: true
+      content:
+        type: string
+        minLength: 1
+        required: true
+      published: boolean, required
+      publishedAt: string
+    namespace: example
+  Comment:
+    fields:
+      edited: boolean
+      content:
+        type: string
+        minLength: 1
+        maxLength: 1000
+        required: true
+      editedAt: string
+      createdAt: string, required
+    namespace: example
+  Product:
+    fields:
+      name:
+        type: string
+        minLength: 1
+        maxLength: 200
+        required: true
+      tags: array
+      price: number, min:0, required
+      inStock: boolean
+      category:
+        type: string
+        enum:
+          - electronics
+          - clothing
+          - food
+          - books
+          - other
+        required: true
+      description:
+        type: string
+        maxLength: 1000
+    namespace: store
+  Order:
+    fields:
+      items:
+        type: array
+        description: List of product IDs in this order
+        required: true
+      notes:
+        type: string
+        maxLength: 500
+        description: Optional notes or special instructions for the order
+      status:
+        type: string
+        enum:
+          - pending
+          - processing
+          - shipped
+          - delivered
+          - cancelled
+        description: Current status of the order
+        required: true
+      orderDate:
+        type: string
+        description: Date when the order was placed
+        required: true
+      customerId:
+        type: string
+        description: Reference to the customer who placed the order
+        required: true
+      orderNumber:
+        type: string
+        minLength: 8
+        maxLength: 20
+        description: Unique identifier for the order
+        required: true
+      totalAmount:
+        type: number
+        min: 0
+        description: Total order amount in USD
+        required: true
+    namespace: store
+relations:
+  - name: has_next_action
+    from: Project
+    to: NextAction
+    cardinality: 1..n
+    namespace: personal.you
+  - name: assigned_to
+    from: Task
+    to: Person
+    cardinality: n..1
+    namespace: test.events
+  - name: author
+    from: User
+    to: Post
+    cardinality: 1..n
+    namespace: example
+  - name: commenter
+    from: User
+    to: Comment
+    cardinality: 1..n
+    namespace: example
+  - name: comments
+    from: Post
+    to: Comment
+    cardinality: 1..n
+    namespace: example
+  - name: assigned_to
+    from: Task
+    to: User
+    cardinality: n..1
+    namespace: tasks
+namespaces:
+  - example
+  - personal.you
+  - store
+  - tasks
+  - test
+  - test.events
+  - work.acme

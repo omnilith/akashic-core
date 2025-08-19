@@ -24,6 +24,12 @@ const colors = {
   dim: '\x1b[2m',
 };
 
+// Import YAML modules
+import { parseOntology } from './yaml/parser';
+import { computeDiff, formatDiff } from './yaml/differ';
+import { applyDiff } from './yaml/applier';
+import { exportToYaml } from './yaml/exporter';
+
 // Main commands
 const commands = {
   // Register a type alias
@@ -918,6 +924,174 @@ const commands = {
         `${colors.red}Search failed:${colors.reset}`,
         error.message,
       );
+    }
+  },
+
+  // Apply YAML ontology definitions
+  async apply(args: string[]) {
+    if (args.length === 0) {
+      console.error(
+        `${colors.red}Usage: akashic apply <file.yaml|directory> [--dry-run] [--verbose]${colors.reset}`
+      );
+      process.exit(1);
+    }
+
+    const source = args[0];
+    const dryRun = args.includes('--dry-run');
+    const verbose = args.includes('--verbose');
+    const allowDeletes = args.includes('--allow-deletes');
+
+    try {
+      // Parse YAML file/directory
+      console.log(`${colors.cyan}📖 Parsing ontology from: ${source}${colors.reset}`);
+      const { ontology, errors } = await parseOntology(source);
+
+      if (errors.length > 0) {
+        console.error(`${colors.red}❌ Validation errors:${colors.reset}`);
+        for (const error of errors) {
+          console.error(`  - ${error}`);
+        }
+        process.exit(1);
+      }
+
+      // Compute differences
+      console.log(`${colors.cyan}🔍 Computing differences...${colors.reset}`);
+      const diff = await computeDiff(ontology);
+
+      // Display diff
+      console.log(formatDiff(diff));
+
+      if (diff.summary.totalChanges === 0) {
+        console.log(`\n${colors.green}✅ Ontology is up to date!${colors.reset}`);
+        return;
+      }
+
+      // Apply changes (or dry-run)
+      if (dryRun) {
+        console.log(`\n${colors.yellow}🔍 Dry run complete - no changes applied${colors.reset}`);
+        return;
+      }
+
+      // Confirm before applying
+      if (!args.includes('--yes')) {
+        const confirm = await inquirer.prompt([
+          {
+            type: 'confirm',
+            name: 'proceed',
+            message: `Apply ${diff.summary.totalChanges} changes?`,
+            default: false
+          }
+        ]);
+
+        if (!confirm.proceed) {
+          console.log('Cancelled.');
+          return;
+        }
+      }
+
+      // Apply the changes
+      const result = await applyDiff(diff, { 
+        dryRun: false, 
+        verbose,
+        allowDeletes
+      });
+
+      // Report results
+      console.log('');
+      if (result.success) {
+        console.log(`${colors.green}✅ All changes applied successfully!${colors.reset}`);
+      } else {
+        console.log(`${colors.yellow}⚠️  Some changes failed:${colors.reset}`);
+        for (const error of result.errors) {
+          console.error(`  - ${error.type} ${error.name}: ${error.error}`);
+        }
+      }
+
+      if (result.applied.length > 0 && verbose) {
+        console.log(`\n${colors.green}Applied:${colors.reset}`);
+        for (const item of result.applied) {
+          console.log(`  ✅ ${item}`);
+        }
+      }
+
+      if (result.failed.length > 0) {
+        console.log(`\n${colors.red}Failed:${colors.reset}`);
+        for (const item of result.failed) {
+          console.log(`  ❌ ${item}`);
+        }
+      }
+
+    } catch (error: any) {
+      console.error(`${colors.red}Error: ${error.message}${colors.reset}`);
+      if (verbose) {
+        console.error(error.stack);
+      }
+      process.exit(1);
+    }
+  },
+
+  // Export ontology to YAML
+  async export(args: string[]) {
+    // Parse arguments
+    let format = 'yaml';
+    let namespace: string | undefined;
+    let outputDir: string | undefined;
+    let includeSystem = false;
+    let split = false;
+    
+    for (let i = 0; i < args.length; i++) {
+      if (args[i] === '--format' && args[i + 1]) {
+        format = args[i + 1];
+        i++;
+      } else if (args[i] === '--namespace' && args[i + 1]) {
+        namespace = args[i + 1];
+        i++;
+      } else if (args[i] === '--output' && args[i + 1]) {
+        outputDir = args[i + 1];
+        split = true;
+        i++;
+      } else if (args[i] === '--include-system') {
+        includeSystem = true;
+      } else if (args[i] === '--split') {
+        split = true;
+      }
+    }
+    
+    if (format !== 'yaml') {
+      console.error(`${colors.red}Only YAML format is currently supported${colors.reset}`);
+      process.exit(1);
+    }
+    
+    try {
+      // Write progress to stderr so it doesn't mix with output
+      console.error(`${colors.cyan}📤 Exporting ontology...${colors.reset}`);
+      
+      const result = await exportToYaml({
+        namespace,
+        includeSystemNamespaces: includeSystem,
+        splitByNamespace: split,
+        outputDir
+      });
+      
+      if (typeof result === 'string') {
+        // Single file output - write to stdout (data only)
+        process.stdout.write(result);
+      } else {
+        // Multiple files
+        console.log(`${colors.green}✅ Exported ${result.size} namespace(s)${colors.reset}`);
+        for (const [ns, content] of result) {
+          if (outputDir) {
+            console.log(`  📁 ${ns}.yaml`);
+          } else {
+            console.log(`\n${colors.cyan}# Namespace: ${ns}${colors.reset}`);
+            console.log(content);
+          }
+        }
+      }
+      
+    } catch (error: any) {
+      console.error(`${colors.red}Export failed: ${error.message}${colors.reset}`);
+      process.exit(1);
     }
   },
 
@@ -2291,6 +2465,14 @@ ${colors.cyan}Commands - Entity Management:${colors.reset}
   ${colors.green}query${colors.reset}                    Advanced query builder (interactive)
   ${colors.green}health${colors.reset}                   Check data integrity and consistency
   
+${colors.cyan}Commands - Ontology Management:${colors.reset}
+  ${colors.green}apply <file.yaml>${colors.reset}        Apply YAML ontology definitions
+  ${colors.green}export${colors.reset}                   Export ontology to YAML
+    --format yaml          Output format (currently only yaml)
+    --namespace <ns>       Export specific namespace only
+    --output <dir>         Export to directory (one file per namespace)
+    --include-system       Include system namespaces
+  
 ${colors.cyan}Commands - Type Management:${colors.reset}
   ${colors.green}types${colors.reset}                    List all entity types and aliases
   ${colors.green}show-type <type>${colors.reset}         Show entity type structure and schema
@@ -2603,6 +2785,12 @@ async function main() {
       break;
     case 'health':
       await commands.health(commandArgs);
+      break;
+    case 'apply':
+      await commands.apply(commandArgs);
+      break;
+    case 'export':
+      await commands.export(commandArgs);
       break;
     case 'create-relation-type':
       await commands.createRelationType(commandArgs);

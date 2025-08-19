@@ -1,5 +1,10 @@
 // src/modules/relation-types/relation-types.service.ts
-import { Injectable, BadRequestException } from '@nestjs/common';
+import {
+  Injectable,
+  BadRequestException,
+  NotFoundException,
+  ConflictException,
+} from '@nestjs/common';
 import { RelationTypesRepo } from './relation-types.repo';
 import { EntityTypesService } from '../entity-types/entity-types.service';
 import { EventsService } from '../events/events.service';
@@ -63,11 +68,102 @@ export class RelationTypesService {
     return relationType;
   }
 
+  async update(id: string, name?: string, cardinality?: string) {
+    const existing = await this.repo.findById(id);
+    if (!existing) {
+      throw new NotFoundException(`RelationType with id ${id} not found`);
+    }
+
+    const updates: Partial<{
+      name: string;
+      cardinality: string;
+    }> = {};
+
+    if (name !== undefined) {
+      updates.name = name;
+    }
+
+    if (cardinality !== undefined) {
+      // Validate cardinality format
+      const validCardinalities = ['1..1', '1..n', 'n..1', 'n..n'];
+      if (!validCardinalities.includes(cardinality)) {
+        throw new BadRequestException(
+          `Invalid cardinality. Must be one of: ${validCardinalities.join(', ')}`,
+        );
+      }
+      updates.cardinality = cardinality;
+    }
+
+    const updated = await this.repo.update(id, updates);
+
+    if (!updated) {
+      throw new Error('Failed to update relation type');
+    }
+
+    await this.eventsService.logEvent({
+      eventType: 'relationType.updated',
+      resourceType: 'relationType',
+      resourceId: id,
+      namespace: existing.namespace,
+      payload: {
+        before: {
+          name: existing.name,
+          cardinality: existing.cardinality,
+        },
+        after: {
+          name: updated.name,
+          cardinality: updated.cardinality,
+        },
+      },
+    });
+
+    return updated;
+  }
+
+  async delete(id: string) {
+    const existing = await this.repo.findById(id);
+    if (!existing) {
+      throw new NotFoundException(`RelationType with id ${id} not found`);
+    }
+
+    const hasRelations = await this.repo.hasRelations(id);
+    if (hasRelations) {
+      throw new ConflictException(
+        `Cannot delete RelationType ${existing.name}: relations of this type exist`,
+      );
+    }
+
+    const deleted = await this.repo.delete(id);
+
+    if (!deleted) {
+      throw new Error('Failed to delete relation type');
+    }
+
+    await this.eventsService.logEvent({
+      eventType: 'relationType.deleted',
+      resourceType: 'relationType',
+      resourceId: id,
+      namespace: existing.namespace,
+      payload: {
+        name: existing.name,
+        fromEntityTypeId: existing.fromEntityTypeId,
+        toEntityTypeId: existing.toEntityTypeId,
+        cardinality: existing.cardinality,
+      },
+    });
+
+    return { id, deleted: true };
+  }
+
   async findAll(namespace?: string) {
     return await this.repo.findAll(namespace);
   }
 
   async findById(id: string) {
     return await this.repo.findById(id);
+  }
+
+  async findByNameAndNamespace(name: string, namespace: string) {
+    return await this.repo.findByNameAndNamespace(name, namespace);
   }
 }

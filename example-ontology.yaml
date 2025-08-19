@@ -1,0 +1,71 @@
+# Example Ontology Definition
+# This demonstrates YAML-based ontology management
+
+namespace: example
+
+types:
+  Task:
+    description: A task or todo item
+    fields:
+      title: string, required
+      description: text
+      status: 
+        type: string
+        enum: [todo, in-progress, done, cancelled]
+        default: todo
+      priority:
+        type: number
+        min: 1
+        max: 5
+        default: 3
+      dueDate: date
+      tags: 
+        type: array
+        items:
+          type: string
+      
+  Project:
+    description: A project containing multiple tasks
+    fields:
+      name: string, required, unique
+      description: text
+      status:
+        type: string
+        enum: [planning, active, completed, archived]
+        default: planning
+      startDate: date
+      endDate: date
+      budget:
+        type: number
+        minimum: 0
+      
+  Person:
+    description: A person who can work on tasks
+    fields:
+      name: string, required
+      email: email, required, unique
+      role:
+        type: string
+        enum: [developer, designer, manager, stakeholder]
+      active:
+        type: boolean
+        default: true
+
+relations:
+  - name: belongs_to
+    from: Task
+    to: Project
+    cardinality: n..1
+    description: Tasks belong to projects
+    
+  - name: assigned_to
+    from: Task
+    to: Person
+    cardinality: n..1
+    description: Tasks are assigned to people
+    
+  - name: manages
+    from: Person
+    to: Project
+    cardinality: n..n
+    description: People manage projects

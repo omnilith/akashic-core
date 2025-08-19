@@ -426,7 +426,7 @@ export class HealthChecker {
 
       if (
         unknownFields.length > 0 &&
-        (entityType as any).schemaJson.additionalProperties === false
+        entityType.schemaJson.additionalProperties === false
       ) {
         result.issues.push({
           entityId: entity.id,
@@ -487,10 +487,10 @@ export class HealthChecker {
           relationId: relation.id,
           description: `Relation has ${issues.join(', ')}`,
           details: {
-            expectedFrom: (relationType as any).fromEntityTypeId,
-            actualFrom: (fromEntity as any).entityTypeId,
-            expectedTo: (relationType as any).toEntityTypeId,
-            actualTo: (toEntity as any).entityTypeId,
+            expectedFrom: relationType.fromEntityTypeId,
+            actualFrom: fromEntity.entityTypeId,
+            expectedTo: relationType.toEntityTypeId,
+            actualTo: toEntity.entityTypeId,
           },
         });
       }
@@ -672,7 +672,9 @@ export class HealthChecker {
                   suspiciousDates.push(`${path}: very old date (${value})`);
                 }
               }
-            } catch {}
+            } catch {
+              /* empty */
+            }
           }
         } else if (typeof value === 'object' && value !== null) {
           for (const [key, val] of Object.entries(value)) {
@@ -876,8 +878,8 @@ export class HealthChecker {
           description: `Relation crosses namespace boundaries`,
           details: {
             relationNamespace: relation.namespace,
-            fromNamespace: (fromEntity as any).namespace,
-            toNamespace: (toEntity as any).namespace,
+            fromNamespace: fromEntity.namespace,
+            toNamespace: toEntity.namespace,
           },
         });
       }
@@ -924,10 +926,11 @@ export class HealthChecker {
       if (safeOnly && result.autoFixRisk !== 'safe') continue;
 
       switch (result.checkName) {
-        case 'orphaned-relations':
+        case 'orphaned-relations': {
           const orphanedRelationFixes = await this.fixOrphanedRelations(result);
           fixes.set(result.checkName, orphanedRelationFixes);
           break;
+        }
         case 'orphaned-entities':
           if (!safeOnly || result.autoFixRisk === 'safe') {
             const orphanedEntityFixes = await this.fixOrphanedEntities(result);
@@ -971,7 +974,7 @@ export class HealthChecker {
     };
   }
 
-  private async fixOrphanedEntities(result: HealthCheckResult): Promise<any> {
+  private fixOrphanedEntities(result: HealthCheckResult): any {
     // This is a dangerous operation, so we just return what would be deleted
     // Actual deletion would need to be implemented in the backend
     const toDelete: string[] = [];

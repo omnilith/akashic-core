@@ -1,0 +1,16 @@
+namespace: test
+types:
+  TestEntityUpdate:
+    fields:
+      name: string, required
+      description: text
+      status: string, enum[active|inactive]
+      priority: number, min:1, max:10
+      tags: array
+      metadata: object
+
+relations:
+  - name: test_relation
+    from: TestEntityUpdate
+    to: TestEntityUpdate  
+    cardinality: 1..n
