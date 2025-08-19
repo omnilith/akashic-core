@@ -108,7 +108,16 @@ describe('RelationsService', () => {
         .mockResolvedValueOnce(mockFromEntity)
         .mockResolvedValueOnce(mockToEntity);
       repo.create.mockResolvedValue(mockRelation);
-      eventsService.logEvent.mockResolvedValue(undefined);
+      eventsService.logEvent.mockResolvedValue({
+        id: 'event-id',
+        namespace: 'default',
+        eventType: 'relation.created',
+        resourceType: 'relation',
+        resourceId: 'relation-id',
+        timestamp: new Date(),
+        metadata: {},
+        payload: {},
+      });
 
       const result = await service.create(
         namespace,
@@ -161,7 +170,16 @@ describe('RelationsService', () => {
         .mockResolvedValueOnce(mockFromEntity)
         .mockResolvedValueOnce(mockToEntity);
       repo.create.mockResolvedValue(mockRelation);
-      eventsService.logEvent.mockResolvedValue(undefined);
+      eventsService.logEvent.mockResolvedValue({
+        id: 'event-id',
+        namespace: 'default',
+        eventType: 'relation.created',
+        resourceType: 'relation',
+        resourceId: 'relation-id',
+        timestamp: new Date(),
+        metadata: {},
+        payload: {},
+      });
 
       const result = await service.create(
         namespace,
@@ -379,7 +397,16 @@ describe('RelationsService', () => {
     it('should delete an existing relation', async () => {
       repo.findById.mockResolvedValue(mockRelation);
       repo.delete.mockResolvedValue(true);
-      eventsService.logEvent.mockResolvedValue(undefined);
+      eventsService.logEvent.mockResolvedValue({
+        id: 'event-id',
+        namespace: 'default',
+        eventType: 'relation.created',
+        resourceType: 'relation',
+        resourceId: 'relation-id',
+        timestamp: new Date(),
+        metadata: {},
+        payload: {},
+      });
 
       const result = await service.delete(relationId);
 

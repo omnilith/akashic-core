@@ -69,10 +69,19 @@ describe('EntityTypesService', () => {
 
       validationService.validateSchema.mockReturnValue({
         valid: true,
-        errors: null,
+        errors: undefined,
       });
       repo.create.mockResolvedValue(mockEntityType);
-      eventsService.logEvent.mockResolvedValue(undefined);
+      eventsService.logEvent.mockResolvedValue({
+        id: 'event-id',
+        namespace: 'default',
+        eventType: 'entity-type.created',
+        resourceType: 'entity-type',
+        resourceId: mockEntityType.id,
+        timestamp: new Date(),
+        metadata: {},
+        payload: mockEntityType,
+      });
 
       const result = await service.create(namespace, name, schemaString);
 

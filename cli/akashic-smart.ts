@@ -854,17 +854,23 @@ const commands = {
     `;
 
     try {
-      const result = await schemaHelper.graphqlRequest(query, { filter: options.filter });
+      const result = await schemaHelper.graphqlRequest(query, {
+        filter: options.filter,
+      });
 
       if (!result.searchEntities || result.searchEntities.length === 0) {
-        console.log(`${colors.yellow}No entities found matching the query.${colors.reset}`);
+        console.log(
+          `${colors.yellow}No entities found matching the query.${colors.reset}`,
+        );
         return;
       }
 
       const entities = result.searchEntities;
       const total = result.countEntities;
 
-      console.log(`\n${colors.green}Found ${entities.length} of ${total} total matching entities:${colors.reset}\n`);
+      console.log(
+        `\n${colors.green}Found ${entities.length} of ${total} total matching entities:${colors.reset}\n`,
+      );
 
       const typeIds = [...new Set(entities.map((e: any) => e.entityTypeId))];
       const typesQuery = `
@@ -876,20 +882,26 @@ const commands = {
         }
       `;
       const typesResult = await schemaHelper.graphqlRequest(typesQuery);
-      const typeMap = new Map(typesResult.entityTypes.map((t: any) => [t.id, t.name]));
+      const typeMap = new Map(
+        typesResult.entityTypes.map((t: any) => [t.id, t.name]),
+      );
 
       entities.forEach((entity: any) => {
         const typeName = typeMap.get(entity.entityTypeId) || 'Unknown';
-        console.log(`${colors.bright}[${typeName}] ${entity.id}${colors.reset}`);
+        console.log(
+          `${colors.bright}[${typeName}] ${entity.id}${colors.reset}`,
+        );
         console.log(`  Namespace: ${entity.namespace}`);
-        
+
         const dataKeys = Object.keys(entity.data);
         const preview = dataKeys.slice(0, 3).reduce((acc: any, key) => {
           acc[key] = entity.data[key];
           return acc;
         }, {});
-        
-        console.log(`  Data: ${JSON.stringify(preview, null, 2).split('\n').join('\n  ')}`);
+
+        console.log(
+          `  Data: ${JSON.stringify(preview, null, 2).split('\n').join('\n  ')}`,
+        );
         if (dataKeys.length > 3) {
           console.log(`  ... and ${dataKeys.length - 3} more fields`);
         }
@@ -897,184 +909,15 @@ const commands = {
       });
 
       if (entities.length < total) {
-        console.log(`${colors.dim}Showing ${entities.length} of ${total} results. Use --limit and --offset for pagination.${colors.reset}\n`);
-      }
-
-    } catch (error: any) {
-      console.error(`${colors.red}Search failed:${colors.reset}`, error.message);
-    }
-  },
-
-  // OLD SEARCH FUNCTION REMOVED - using new query builder
-  async oldSearch_removed(args: string[]) {
-
-    // Parse arguments
-    let i = 0;
-    while (i < args.length) {
-      if (args[i] === '--type' && args[i + 1]) {
-        searchType = args[i + 1];
-        i += 2;
-      } else if (args[i] === '--namespace' && args[i + 1]) {
-        namespace = args[i + 1];
-        i += 2;
-      } else if (!searchField && args[i].includes('=')) {
-        // Parse field=value format
-        const [field, ...valueParts] = args[i].split('=');
-        searchField = field;
-        searchValue = valueParts.join('=');
-        i++;
-      } else if (!searchField) {
-        searchField = args[i];
-        searchValue = args[i + 1];
-        i += 2;
-      } else {
-        i++;
-      }
-    }
-
-    // Interactive mode if no search criteria provided
-    if (!searchField) {
-      const answers = await inquirer.prompt([
-        {
-          type: 'input',
-          name: 'field',
-          message: 'Search field name:',
-          validate: (input) => input.length > 0 || 'Field name is required',
-        },
-        {
-          type: 'input',
-          name: 'value',
-          message: 'Search value (supports partial matches):',
-          validate: (input) => input.length > 0 || 'Search value is required',
-        },
-      ]);
-
-      searchField = answers.field;
-      searchValue = answers.value;
-    }
-
-    try {
-      // Fetch all entities
-      const query = `
-        query GetEntities($namespace: String, $entityTypeId: String) {
-          entities(namespace: $namespace, entityTypeId: $entityTypeId) {
-            id
-            namespace
-            entityTypeId
-            data
-            createdAt
-            updatedAt
-          }
-        }
-      `;
-
-      // If type specified, resolve it to an ID
-      let typeId: string | undefined;
-      if (searchType) {
-        typeId = schemaHelper.resolveTypeId(searchType);
-      }
-
-      const result = await schemaHelper.graphqlRequest(query, {
-        namespace: searchType ? undefined : namespace,
-        entityTypeId: typeId,
-      });
-
-      // Search through entities
-      const matches: any[] = [];
-      for (const entity of result.entities) {
-        const data = entity.data;
-
-        // Check if field exists and matches (case-insensitive partial match)
-        if (data && typeof data === 'object') {
-          const fieldValue = data[searchField!];
-          if (fieldValue !== undefined) {
-            const valueStr = String(fieldValue).toLowerCase();
-            const searchStr = String(searchValue).toLowerCase();
-
-            if (valueStr.includes(searchStr)) {
-              matches.push(entity);
-            }
-          }
-        }
-      }
-
-      // Get entity type information for display
-      const typesQuery = `
-        query GetEntityTypes {
-          entityTypes {
-            id
-            name
-            namespace
-          }
-        }
-      `;
-
-      const typesResult = await schemaHelper.graphqlRequest(typesQuery, {});
-      const typeMap = new Map(
-        typesResult.entityTypes.map((t: any) => [t.id, t]),
-      );
-
-      // Display results
-      if (matches.length === 0) {
         console.log(
-          `No entities found matching ${searchField}="${searchValue}"`,
+          `${colors.dim}Showing ${entities.length} of ${total} results. Use --limit and --offset for pagination.${colors.reset}\n`,
         );
-        return;
       }
-
-      console.log(
-        `\n${colors.green}Found ${matches.length} match${matches.length === 1 ? '' : 'es'}:${colors.reset}\n`,
-      );
-
-      // Group by entity type for better display
-      const byType = new Map<string, any[]>();
-      for (const entity of matches) {
-        const typeId = entity.entityTypeId;
-        if (!byType.has(typeId)) {
-          byType.set(typeId, []);
-        }
-        byType.get(typeId)!.push(entity);
-      }
-
-      // Display grouped results
-      for (const [typeId, entities] of byType) {
-        const type = typeMap.get(typeId);
-        console.log(
-          `${colors.cyan}${type ? (type as any).name : 'Unknown Type'}:${colors.reset}`,
-        );
-
-        for (const entity of entities) {
-          // Create a preview of the entity
-          const data = entity.data;
-          const matchedValue = data[searchField!];
-
-          // Build a preview showing the matched field and other key fields
-          let preview = `${searchField}: ${colors.yellow}${matchedValue}${colors.reset}`;
-
-          // Add other identifying fields if they exist
-          const identifiers = ['name', 'title', 'username', 'email', 'id'];
-          for (const field of identifiers) {
-            if (field !== searchField && data[field]) {
-              preview += `, ${field}: ${data[field]}`;
-              break; // Just show one additional field
-            }
-          }
-
-          console.log(`  • ${entity.id.substring(0, 8)}... ${preview}`);
-          console.log(
-            `    ${colors.dim}namespace: ${entity.namespace}, created: ${new Date(entity.createdAt).toLocaleDateString()}${colors.reset}`,
-          );
-        }
-        console.log();
-      }
-
-      // Suggest next actions
-      console.log(
-        `${colors.dim}Tip: Use 'akashic show <id>' to see full details of any entity${colors.reset}`,
-      );
     } catch (error: any) {
-      console.error(`${colors.red}Error: ${error.message}${colors.reset}`);
-      process.exit(1);
+      console.error(
+        `${colors.red}Search failed:${colors.reset}`,
+        error.message,
+      );
     }
   },
 
@@ -2572,7 +2415,10 @@ ${colors.cyan}Environment Variables:${colors.reset}
     const options = parseArgs();
 
     // Interactive mode if no filter provided
-    if (Object.keys(options.filter).length === 1 && options.filter.limit === 20) {
+    if (
+      Object.keys(options.filter).length === 1 &&
+      options.filter.limit === 20
+    ) {
       const answers = await inquirer.prompt([
         {
           type: 'input',
@@ -2595,7 +2441,9 @@ ${colors.cyan}Environment Variables:${colors.reset}
         options.filter.namespace = answers.namespace;
       }
       if (answers.entityType) {
-        options.filter.entityTypeId = schemaHelper.resolveTypeId(answers.entityType);
+        options.filter.entityTypeId = schemaHelper.resolveTypeId(
+          answers.entityType,
+        );
       }
       if (answers.query) {
         try {
@@ -2631,17 +2479,23 @@ ${colors.cyan}Environment Variables:${colors.reset}
     `;
 
     try {
-      const result = await schemaHelper.graphqlRequest(query, { filter: options.filter });
+      const result = await schemaHelper.graphqlRequest(query, {
+        filter: options.filter,
+      });
 
       if (!result.searchEntities || result.searchEntities.length === 0) {
-        console.log(`${colors.yellow}No entities found matching the query.${colors.reset}`);
+        console.log(
+          `${colors.yellow}No entities found matching the query.${colors.reset}`,
+        );
         return;
       }
 
       const entities = result.searchEntities;
       const total = result.countEntities;
 
-      console.log(`\n${colors.green}Found ${entities.length} of ${total} total matching entities:${colors.reset}\n`);
+      console.log(
+        `\n${colors.green}Found ${entities.length} of ${total} total matching entities:${colors.reset}\n`,
+      );
 
       // Get entity type names for display
       const typeIds = [...new Set(entities.map((e: any) => e.entityTypeId))];
@@ -2654,22 +2508,28 @@ ${colors.cyan}Environment Variables:${colors.reset}
         }
       `;
       const typesResult = await schemaHelper.graphqlRequest(typesQuery);
-      const typeMap = new Map(typesResult.entityTypes.map((t: any) => [t.id, t.name]));
+      const typeMap = new Map(
+        typesResult.entityTypes.map((t: any) => [t.id, t.name]),
+      );
 
       // Display results
       entities.forEach((entity: any) => {
         const typeName = typeMap.get(entity.entityTypeId) || 'Unknown';
-        console.log(`${colors.bright}[${typeName}] ${entity.id}${colors.reset}`);
+        console.log(
+          `${colors.bright}[${typeName}] ${entity.id}${colors.reset}`,
+        );
         console.log(`  Namespace: ${entity.namespace}`);
-        
+
         // Show first few fields of data
         const dataKeys = Object.keys(entity.data);
         const preview = dataKeys.slice(0, 3).reduce((acc: any, key) => {
           acc[key] = entity.data[key];
           return acc;
         }, {});
-        
-        console.log(`  Data: ${JSON.stringify(preview, null, 2).split('\n').join('\n  ')}`);
+
+        console.log(
+          `  Data: ${JSON.stringify(preview, null, 2).split('\n').join('\n  ')}`,
+        );
         if (dataKeys.length > 3) {
           console.log(`  ... and ${dataKeys.length - 3} more fields`);
         }
@@ -2677,11 +2537,15 @@ ${colors.cyan}Environment Variables:${colors.reset}
       });
 
       if (entities.length < total) {
-        console.log(`${colors.dim}Showing ${entities.length} of ${total} results. Use --limit and --offset for pagination.${colors.reset}\n`);
+        console.log(
+          `${colors.dim}Showing ${entities.length} of ${total} results. Use --limit and --offset for pagination.${colors.reset}\n`,
+        );
       }
-
     } catch (error: any) {
-      console.error(`${colors.red}Search failed:${colors.reset}`, error.message);
+      console.error(
+        `${colors.red}Search failed:${colors.reset}`,
+        error.message,
+      );
     }
   },
 };

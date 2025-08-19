@@ -76,6 +76,7 @@ describe('EventsService', () => {
       const mockEvent = {
         id: 'event-uuid',
         ...eventData,
+        metadata: eventData.metadata || {},
         timestamp: new Date(),
       };
 

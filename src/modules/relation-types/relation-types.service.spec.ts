@@ -85,7 +85,16 @@ describe('RelationTypesService', () => {
         .mockResolvedValueOnce(mockFromEntityType)
         .mockResolvedValueOnce(mockToEntityType);
       repo.create.mockResolvedValue(mockRelationType);
-      eventsService.logEvent.mockResolvedValue(undefined);
+      eventsService.logEvent.mockResolvedValue({
+        id: 'event-id',
+        namespace: 'default',
+        eventType: 'relation-type.created',
+        resourceType: 'relation-type',
+        resourceId: 'relation-type-id',
+        timestamp: new Date(),
+        metadata: {},
+        payload: {},
+      });
 
       const result = await service.create(
         namespace,
@@ -204,7 +213,16 @@ describe('RelationTypesService', () => {
           .mockResolvedValueOnce(mockFromEntityType)
           .mockResolvedValueOnce(mockToEntityType);
         repo.create.mockResolvedValue(mockRelationType);
-        eventsService.logEvent.mockResolvedValue(undefined);
+        eventsService.logEvent.mockResolvedValue({
+        id: 'event-id',
+        namespace: 'default',
+        eventType: 'relation-type.created',
+        resourceType: 'relation-type',
+        resourceId: 'relation-type-id',
+        timestamp: new Date(),
+        metadata: {},
+        payload: {},
+      });
 
         const result = await service.create(
           namespace,

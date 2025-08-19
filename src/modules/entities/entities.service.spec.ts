@@ -95,10 +95,19 @@ describe('EntitiesService', () => {
       entityTypesService.findById.mockResolvedValue(mockEntityType);
       validationService.validateEntityData.mockReturnValue({
         valid: true,
-        errors: null,
+        errors: undefined,
       });
       repo.create.mockResolvedValue(mockEntity);
-      eventsService.logEvent.mockResolvedValue(undefined);
+      eventsService.logEvent.mockResolvedValue({
+        id: 'event-id',
+        namespace: 'default',
+        eventType: 'entity.created',
+        resourceType: 'entity',
+        resourceId: mockEntity.id,
+        timestamp: new Date(),
+        metadata: {},
+        payload: mockEntity,
+      });
 
       const result = await service.create(namespace, entityTypeId, validData);
 
@@ -304,10 +313,19 @@ describe('EntitiesService', () => {
       entityTypesService.findById.mockResolvedValue(mockEntityType);
       validationService.validateEntityData.mockReturnValue({
         valid: true,
-        errors: null,
+        errors: undefined,
       });
       repo.update.mockResolvedValue(mockUpdatedEntity);
-      eventsService.logEvent.mockResolvedValue(undefined);
+      eventsService.logEvent.mockResolvedValue({
+        id: 'event-id',
+        namespace: 'default',
+        eventType: 'entity.updated',
+        resourceType: 'entity',
+        resourceId: mockUpdatedEntity.id,
+        timestamp: new Date(),
+        metadata: {},
+        payload: mockUpdatedEntity,
+      });
 
       const result = await service.update(entityId, newData);
 
@@ -382,7 +400,7 @@ describe('EntitiesService', () => {
       entityTypesService.findById.mockResolvedValue(mockEntityType);
       validationService.validateEntityData.mockReturnValue({
         valid: true,
-        errors: null,
+        errors: undefined,
       });
       repo.update.mockResolvedValue(null);
 
