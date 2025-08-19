@@ -4,6 +4,7 @@ import { EntitiesRepo } from './entities.repo';
 import { EntityTypesService } from '../entity-types/entity-types.service';
 import { ValidationService } from '../../lib/validation.service';
 import { EventsService } from '../events/events.service';
+import { EntityFilterInput } from '../query-builder/dto/query-filter.dto';
 
 @Injectable()
 export class EntitiesService {
@@ -58,6 +59,14 @@ export class EntitiesService {
 
   async findAll(namespace?: string, entityTypeId?: string) {
     return await this.entitiesRepo.findAll(namespace, entityTypeId);
+  }
+
+  async search(filter: EntityFilterInput) {
+    return await this.entitiesRepo.search(filter);
+  }
+
+  async count(filter: EntityFilterInput) {
+    return await this.entitiesRepo.count(filter);
   }
 
   async findById(id: string) {

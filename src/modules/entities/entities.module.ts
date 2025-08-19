@@ -4,6 +4,7 @@ import { DbModule } from '../../db/db.module';
 import { LibModule } from '../../lib/lib.module';
 import { EntityTypesModule } from '../entity-types/entity-types.module';
 import { EventsModule } from '../events/events.module';
+import { QueryBuilderModule } from '../query-builder/query-builder.module';
 import { EntitiesService } from './entities.service';
 import { EntitiesRepo } from './entities.repo';
 import { EntitiesResolver } from './entities.resolver';
@@ -14,6 +15,7 @@ import { EntitiesResolver } from './entities.resolver';
     LibModule, // For ValidationService
     EventsModule,
     EntityTypesModule, // For EntityTypesRepo
+    QueryBuilderModule, // For QueryBuilderService
   ],
   providers: [EntitiesService, EntitiesRepo, EntitiesResolver],
   exports: [EntitiesService],
