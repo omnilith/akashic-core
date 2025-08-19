@@ -56,7 +56,7 @@ export function parseFieldShorthand(value: string | YamlField): YamlField {
   }
 
   // Parse shorthand like "string, required, unique"
-  const parts = value.split(',').map(p => p.trim());
+  const parts = value.split(',').map((p) => p.trim());
   const field: YamlField = { type: parts[0] };
 
   for (const part of parts.slice(1)) {
@@ -72,7 +72,7 @@ export function parseFieldShorthand(value: string | YamlField): YamlField {
       field.max = parseInt(part.substring(4).trim());
     } else if (part.startsWith('enum[')) {
       const enumStr = part.substring(5, part.length - 1);
-      field.enum = enumStr.split('|').map(e => e.trim());
+      field.enum = enumStr.split('|').map((e) => e.trim());
     } else if (part.startsWith('reference(')) {
       field.reference = part.substring(10, part.length - 1);
       field.type = 'string'; // References are stored as strings (UUIDs)
@@ -91,7 +91,8 @@ export function parseFieldShorthand(value: string | YamlField): YamlField {
     field.pattern = '^https?://.*';
   } else if (field.type === 'uuid') {
     field.type = 'string';
-    field.pattern = '^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$';
+    field.pattern =
+      '^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$';
   } else if (field.type === 'datetime') {
     field.type = 'string';
     field.pattern = '^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}';
@@ -110,9 +111,9 @@ export function convertToJsonSchema(yamlType: YamlEntityType): any {
 
   for (const [fieldName, fieldDef] of Object.entries(yamlType.fields)) {
     const field = parseFieldShorthand(fieldDef);
-    
+
     const jsonField: any = {
-      type: field.type
+      type: field.type,
     };
 
     if (field.description) jsonField.description = field.description;
@@ -136,7 +137,7 @@ export function convertToJsonSchema(yamlType: YamlEntityType): any {
   const schema: any = {
     type: 'object',
     properties,
-    additionalProperties: false
+    additionalProperties: false,
   };
 
   if (required.length > 0) {
@@ -161,17 +162,18 @@ export function loadYamlDirectory(dirPath: string): YamlOntology {
   const merged: YamlOntology = {
     types: {},
     relations: [],
-    namespaces: []
+    namespaces: [],
   };
 
-  const files = fs.readdirSync(dirPath)
-    .filter(f => f.endsWith('.yaml') || f.endsWith('.yml'))
+  const files = fs
+    .readdirSync(dirPath)
+    .filter((f) => f.endsWith('.yaml') || f.endsWith('.yml'))
     .sort(); // Ensure consistent order
 
   for (const file of files) {
     const filePath = path.join(dirPath, file);
     const ontology = loadYamlFile(filePath);
-    
+
     // Merge types
     if (ontology.types) {
       Object.assign(merged.types!, ontology.types);
@@ -202,8 +204,8 @@ export function loadYamlDirectory(dirPath: string): YamlOntology {
 
 // Process imports
 export async function processImports(
-  ontology: YamlOntology, 
-  basePath: string
+  ontology: YamlOntology,
+  basePath: string,
 ): Promise<YamlOntology> {
   if (!ontology.imports || ontology.imports.length === 0) {
     return ontology;
@@ -222,10 +224,18 @@ export async function processImports(
       merged.types = { ...processed.types, ...merged.types };
     }
     if (processed.relations) {
-      merged.relations = [...(processed.relations || []), ...(merged.relations || [])];
+      merged.relations = [
+        ...(processed.relations || []),
+        ...(merged.relations || []),
+      ];
     }
     if (processed.namespaces) {
-      merged.namespaces = [...new Set([...(processed.namespaces || []), ...(merged.namespaces || [])])];
+      merged.namespaces = [
+        ...new Set([
+          ...(processed.namespaces || []),
+          ...(merged.namespaces || []),
+        ]),
+      ];
     }
   }
 
@@ -258,7 +268,7 @@ export function validateOntology(ontology: YamlOntology): string[] {
   // Validate relations
   if (ontology.relations) {
     const typeNames = Object.keys(ontology.types || {});
-    
+
     for (const relation of ontology.relations) {
       if (!relation.from) {
         errors.push('Relation missing "from" field');
@@ -271,8 +281,13 @@ export function validateOntology(ontology: YamlOntology): string[] {
       }
 
       // Validate cardinality format
-      if (relation.cardinality && !relation.cardinality.match(/^(1|n)\.\.(1|n)$/)) {
-        errors.push(`Invalid cardinality '${relation.cardinality}' for relation '${relation.name}'`);
+      if (
+        relation.cardinality &&
+        !relation.cardinality.match(/^(1|n)\.\.(1|n)$/)
+      ) {
+        errors.push(
+          `Invalid cardinality '${relation.cardinality}' for relation '${relation.name}'`,
+        );
       }
     }
   }
@@ -286,10 +301,10 @@ export async function parseOntology(
   options?: {
     validate?: boolean;
     processImports?: boolean;
-  }
+  },
 ): Promise<{ ontology: YamlOntology; errors: string[] }> {
   let ontology: YamlOntology;
-  
+
   // Check if source is a file or directory
   const stats = fs.statSync(source);
   if (stats.isDirectory()) {
