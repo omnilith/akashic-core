@@ -80,6 +80,52 @@ export function resolveTypeId(nameOrId: string): string {
   return nameOrId;
 }
 
+// Smart entity ID resolution - supports partial matching
+export async function resolveEntityId(partialId: string): Promise<string | null> {
+  // If it's already a full UUID format, return as-is
+  if (partialId.match(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i)) {
+    return partialId;
+  }
+  
+  // Search for entities with ID starting with the partial
+  const query = `
+    query GetEntities {
+      entities {
+        id
+        entityTypeId
+        data
+      }
+    }
+  `;
+  
+  const data = await graphqlRequest(query);
+  const matches = data.entities.filter((e: any) => 
+    e.id.toLowerCase().startsWith(partialId.toLowerCase())
+  );
+  
+  if (matches.length === 0) {
+    return null;
+  }
+  
+  if (matches.length === 1) {
+    return matches[0].id;
+  }
+  
+  // Multiple matches - show them to the user
+  console.log(`Multiple entities found matching "${partialId}":`);
+  for (const entity of matches.slice(0, 10)) {
+    const preview = entity.data?.name || entity.data?.title || 
+                   entity.data?.username || JSON.stringify(entity.data).substring(0, 50);
+    console.log(`  ${entity.id.substring(0, 12)}... ${preview}`);
+  }
+  
+  if (matches.length > 10) {
+    console.log(`  ... and ${matches.length - 10} more`);
+  }
+  
+  throw new Error(`Ambiguous ID: ${matches.length} entities match "${partialId}". Please be more specific.`);
+}
+
 // GraphQL request helper
 export async function graphqlRequest(query: string, variables: any = {}) {
   const config = loadConfig();
