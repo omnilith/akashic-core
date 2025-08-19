@@ -1,5 +1,9 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { BadRequestException, NotFoundException, ConflictException } from '@nestjs/common';
+import {
+  BadRequestException,
+  NotFoundException,
+  ConflictException,
+} from '@nestjs/common';
 import { RelationTypesService } from './relation-types.service';
 import { RelationTypesRepo } from './relation-types.repo';
 import { EntityTypesService } from '../entity-types/entity-types.service';
@@ -361,7 +365,11 @@ describe('RelationTypesService', () => {
         payload: {},
       });
 
-      const result = await service.update(mockRelationType.id, newName, undefined);
+      const result = await service.update(
+        mockRelationType.id,
+        newName,
+        undefined,
+      );
 
       expect(repo.findById).toHaveBeenCalledWith(mockRelationType.id);
       expect(repo.update).toHaveBeenCalledWith(mockRelationType.id, {
@@ -391,7 +399,11 @@ describe('RelationTypesService', () => {
         payload: {},
       });
 
-      const result = await service.update(mockRelationType.id, undefined, newCardinality);
+      const result = await service.update(
+        mockRelationType.id,
+        undefined,
+        newCardinality,
+      );
 
       expect(repo.findById).toHaveBeenCalledWith(mockRelationType.id);
       expect(repo.update).toHaveBeenCalledWith(mockRelationType.id, {
@@ -438,7 +450,11 @@ describe('RelationTypesService', () => {
         payload: {},
       });
 
-      const result = await service.update(mockRelationType.id, newName, newCardinality);
+      const result = await service.update(
+        mockRelationType.id,
+        newName,
+        newCardinality,
+      );
 
       expect(repo.update).toHaveBeenCalledWith(mockRelationType.id, {
         name: newName,
@@ -504,7 +520,11 @@ describe('RelationTypesService', () => {
           payload: {},
         });
 
-        const result = await service.update(mockRelationType.id, undefined, validCardinality);
+        const result = await service.update(
+          mockRelationType.id,
+          undefined,
+          validCardinality,
+        );
 
         expect(result.cardinality).toEqual(validCardinality);
       }
@@ -561,9 +581,9 @@ describe('RelationTypesService', () => {
     it('should throw NotFoundException when relation type not found', async () => {
       repo.findById.mockResolvedValue(null);
 
-      await expect(
-        service.delete('non-existent'),
-      ).rejects.toThrow(NotFoundException);
+      await expect(service.delete('non-existent')).rejects.toThrow(
+        NotFoundException,
+      );
 
       expect(repo.hasRelations).not.toHaveBeenCalled();
       expect(repo.delete).not.toHaveBeenCalled();
@@ -574,9 +594,9 @@ describe('RelationTypesService', () => {
       repo.findById.mockResolvedValue(mockRelationType);
       repo.hasRelations.mockResolvedValue(true);
 
-      await expect(
-        service.delete(mockRelationType.id),
-      ).rejects.toThrow(ConflictException);
+      await expect(service.delete(mockRelationType.id)).rejects.toThrow(
+        ConflictException,
+      );
 
       expect(repo.delete).not.toHaveBeenCalled();
       expect(eventsService.logEvent).not.toHaveBeenCalled();
@@ -587,9 +607,9 @@ describe('RelationTypesService', () => {
       repo.hasRelations.mockResolvedValue(false);
       repo.delete.mockResolvedValue(false);
 
-      await expect(
-        service.delete(mockRelationType.id),
-      ).rejects.toThrow('Failed to delete relation type');
+      await expect(service.delete(mockRelationType.id)).rejects.toThrow(
+        'Failed to delete relation type',
+      );
 
       expect(eventsService.logEvent).not.toHaveBeenCalled();
     });
@@ -612,16 +632,25 @@ describe('RelationTypesService', () => {
 
       const result = await service.findByNameAndNamespace('belongsTo', 'test');
 
-      expect(repo.findByNameAndNamespace).toHaveBeenCalledWith('belongsTo', 'test');
+      expect(repo.findByNameAndNamespace).toHaveBeenCalledWith(
+        'belongsTo',
+        'test',
+      );
       expect(result).toEqual(mockRelationType);
     });
 
     it('should return null when relation type not found', async () => {
       repo.findByNameAndNamespace.mockResolvedValue(null);
 
-      const result = await service.findByNameAndNamespace('NonExistent', 'test');
+      const result = await service.findByNameAndNamespace(
+        'NonExistent',
+        'test',
+      );
 
-      expect(repo.findByNameAndNamespace).toHaveBeenCalledWith('NonExistent', 'test');
+      expect(repo.findByNameAndNamespace).toHaveBeenCalledWith(
+        'NonExistent',
+        'test',
+      );
       expect(result).toBeNull();
     });
   });

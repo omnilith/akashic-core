@@ -54,8 +54,8 @@ describe('EventsService', () => {
         resourceType: eventData.resourceType,
         resourceId: eventData.resourceId,
         namespace: eventData.namespace,
-        payload: eventData.payload,
-        metadata: {},
+        payload: eventData.payload as Record<string, unknown>,
+        metadata: {} as Record<string, unknown>,
       });
       expect(result).toEqual(mockEvent);
     });
@@ -76,7 +76,7 @@ describe('EventsService', () => {
       const mockEvent = {
         id: 'event-uuid',
         ...eventData,
-        metadata: eventData.metadata || {},
+        metadata: (eventData.metadata || {}) as Record<string, unknown>,
         timestamp: new Date(),
       };
 
@@ -89,8 +89,8 @@ describe('EventsService', () => {
         resourceType: eventData.resourceType,
         resourceId: eventData.resourceId,
         namespace: eventData.namespace,
-        payload: eventData.payload,
-        metadata: eventData.metadata,
+        payload: eventData.payload as Record<string, unknown>,
+        metadata: eventData.metadata as Record<string, unknown>,
       });
       expect(result).toEqual(mockEvent);
     });

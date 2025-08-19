@@ -1,5 +1,9 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { BadRequestException, NotFoundException, ConflictException } from '@nestjs/common';
+import {
+  BadRequestException,
+  NotFoundException,
+  ConflictException,
+} from '@nestjs/common';
 import { EntityTypesService } from './entity-types.service';
 import { EntityTypesRepo } from './entity-types.repo';
 import { ValidationService } from '../../lib/validation.service';
@@ -249,7 +253,11 @@ describe('EntityTypesService', () => {
         payload: {},
       });
 
-      const result = await service.update(mockEntityType.id, newName, undefined);
+      const result = await service.update(
+        mockEntityType.id,
+        newName,
+        undefined,
+      );
 
       expect(repo.findById).toHaveBeenCalledWith(mockEntityType.id);
       expect(repo.update).toHaveBeenCalledWith(mockEntityType.id, {
@@ -292,7 +300,11 @@ describe('EntityTypesService', () => {
         payload: {},
       });
 
-      const result = await service.update(mockEntityType.id, undefined, schemaString);
+      const result = await service.update(
+        mockEntityType.id,
+        undefined,
+        schemaString,
+      );
 
       expect(repo.findById).toHaveBeenCalledWith(mockEntityType.id);
       expect(validationService.validateSchema).toHaveBeenCalledWith(newSchema);
@@ -351,7 +363,11 @@ describe('EntityTypesService', () => {
         payload: {},
       });
 
-      const result = await service.update(mockEntityType.id, newName, schemaString);
+      const result = await service.update(
+        mockEntityType.id,
+        newName,
+        schemaString,
+      );
 
       expect(repo.update).toHaveBeenCalledWith(mockEntityType.id, {
         name: newName,
@@ -448,9 +464,9 @@ describe('EntityTypesService', () => {
     it('should throw NotFoundException when entity type not found', async () => {
       repo.findById.mockResolvedValue(null);
 
-      await expect(
-        service.delete('non-existent'),
-      ).rejects.toThrow(NotFoundException);
+      await expect(service.delete('non-existent')).rejects.toThrow(
+        NotFoundException,
+      );
 
       expect(repo.hasEntities).not.toHaveBeenCalled();
       expect(repo.delete).not.toHaveBeenCalled();
@@ -461,9 +477,9 @@ describe('EntityTypesService', () => {
       repo.findById.mockResolvedValue(mockEntityType);
       repo.hasEntities.mockResolvedValue(true);
 
-      await expect(
-        service.delete(mockEntityType.id),
-      ).rejects.toThrow(ConflictException);
+      await expect(service.delete(mockEntityType.id)).rejects.toThrow(
+        ConflictException,
+      );
 
       expect(repo.delete).not.toHaveBeenCalled();
       expect(eventsService.logEvent).not.toHaveBeenCalled();
@@ -474,9 +490,9 @@ describe('EntityTypesService', () => {
       repo.hasEntities.mockResolvedValue(false);
       repo.delete.mockResolvedValue(false);
 
-      await expect(
-        service.delete(mockEntityType.id),
-      ).rejects.toThrow('Failed to delete entity type');
+      await expect(service.delete(mockEntityType.id)).rejects.toThrow(
+        'Failed to delete entity type',
+      );
 
       expect(eventsService.logEvent).not.toHaveBeenCalled();
     });
@@ -497,16 +513,25 @@ describe('EntityTypesService', () => {
 
       const result = await service.findByNameAndNamespace('TestEntity', 'test');
 
-      expect(repo.findByNameAndNamespace).toHaveBeenCalledWith('TestEntity', 'test');
+      expect(repo.findByNameAndNamespace).toHaveBeenCalledWith(
+        'TestEntity',
+        'test',
+      );
       expect(result).toEqual(mockEntityType);
     });
 
     it('should return null when entity type not found', async () => {
       repo.findByNameAndNamespace.mockResolvedValue(null);
 
-      const result = await service.findByNameAndNamespace('NonExistent', 'test');
+      const result = await service.findByNameAndNamespace(
+        'NonExistent',
+        'test',
+      );
 
-      expect(repo.findByNameAndNamespace).toHaveBeenCalledWith('NonExistent', 'test');
+      expect(repo.findByNameAndNamespace).toHaveBeenCalledWith(
+        'NonExistent',
+        'test',
+      );
       expect(result).toBeNull();
     });
   });

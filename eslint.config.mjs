@@ -43,4 +43,11 @@ export default tseslint.config(
       '@typescript-eslint/no-unused-vars': 'warn',
     },
   },
+  {
+    // Disable unbound-method rule for test files (false positive with Jest mocks)
+    files: ['**/*.spec.ts', '**/*.e2e-spec.ts'],
+    rules: {
+      '@typescript-eslint/unbound-method': 'off',
+    },
+  },
 );
