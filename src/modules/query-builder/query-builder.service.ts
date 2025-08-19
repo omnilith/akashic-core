@@ -1,7 +1,11 @@
 import { Injectable } from '@nestjs/common';
-import { SQL, sql, and, or, eq, ne, gt, gte, lt, lte, inArray, like } from 'drizzle-orm';
+import { SQL, sql, and, eq, gte, lte } from 'drizzle-orm';
 import { entity } from '../../db/schema';
-import { EntityFilterInput, QueryOperator, DataQuery } from './dto/query-filter.dto';
+import {
+  EntityFilterInput,
+  QueryOperator,
+  DataQuery,
+} from './dto/query-filter.dto';
 
 @Injectable()
 export class QueryBuilderService {
@@ -58,7 +62,11 @@ export class QueryBuilderService {
       if (value && typeof value === 'object' && !Array.isArray(value)) {
         // Handle operator-based queries
         for (const [operator, operand] of Object.entries(value)) {
-          const condition = this.buildJsonOperatorCondition(fieldPath, operator as QueryOperator, operand);
+          const condition = this.buildJsonOperatorCondition(
+            fieldPath,
+            operator as QueryOperator,
+            operand,
+          );
           if (condition) {
             conditions.push(condition);
           }
@@ -77,7 +85,11 @@ export class QueryBuilderService {
   /**
    * Build condition for a specific JSON operator
    */
-  private buildJsonOperatorCondition(fieldPath: string, operator: QueryOperator, value: any): SQL | null {
+  private buildJsonOperatorCondition(
+    fieldPath: string,
+    operator: QueryOperator,
+    value: unknown,
+  ): SQL | null {
     const jsonPath = this.buildJsonPath(fieldPath);
 
     switch (operator) {
@@ -99,15 +111,19 @@ export class QueryBuilderService {
       case QueryOperator.LESS_THAN_OR_EQUAL:
         return sql`(${jsonPath})::numeric <= ${value}`;
 
-      case QueryOperator.IN:
+      case QueryOperator.IN: {
         if (!Array.isArray(value)) return null;
-        const inValues = value.map(v => JSON.stringify(v)).join(',');
+        const inValues = value.map((v: unknown) => JSON.stringify(v)).join(',');
         return sql`${jsonPath} IN (${sql.raw(inValues)})`;
+      }
 
-      case QueryOperator.NOT_IN:
+      case QueryOperator.NOT_IN: {
         if (!Array.isArray(value)) return null;
-        const ninValues = value.map(v => JSON.stringify(v)).join(',');
+        const ninValues = value
+          .map((v: unknown) => JSON.stringify(v))
+          .join(',');
         return sql`${jsonPath} NOT IN (${sql.raw(ninValues)})`;
+      }
 
       case QueryOperator.CONTAINS:
         // For arrays or strings
@@ -132,17 +148,17 @@ export class QueryBuilderService {
   /**
    * Build JSON equality condition
    */
-  private buildJsonEqualsCondition(fieldPath: string, value: any): SQL {
+  private buildJsonEqualsCondition(fieldPath: string, value: unknown): SQL {
     const jsonPath = this.buildJsonPath(fieldPath);
-    
+
     if (value === null) {
       return sql`${jsonPath} IS NULL`;
     }
-    
+
     if (typeof value === 'string') {
       return sql`${jsonPath} ->> 0 = ${value}`;
     }
-    
+
     return sql`${jsonPath} = ${JSON.stringify(value)}::jsonb`;
   }
 
@@ -152,7 +168,7 @@ export class QueryBuilderService {
   private buildJsonPath(fieldPath: string): SQL {
     const parts = fieldPath.split('.');
     let path = sql`${entity.data}`;
-    
+
     for (const part of parts) {
       // Handle array indices like "tags[0]"
       const arrayMatch = part.match(/^(\w+)\[(\d+)\]$/);
@@ -163,7 +179,7 @@ export class QueryBuilderService {
         path = sql`${path}->'${sql.raw(part)}'`;
       }
     }
-    
+
     return path;
   }
 
@@ -175,25 +191,41 @@ export class QueryBuilderService {
       return [sql`${entity.createdAt} DESC`];
     }
 
-    return sort.map(s => {
+    return sort.map((s) => {
       // Handle JSON field sorting
       if (s.field.startsWith('data.')) {
         const jsonPath = this.buildJsonPath(s.field.substring(5));
-        return s.direction === 'DESC' 
-          ? sql`${jsonPath} DESC` 
+        return s.direction === 'DESC'
+          ? sql`${jsonPath} DESC`
           : sql`${jsonPath} ASC`;
       }
 
       // Handle regular fields
-      const field = (entity as any)[s.field];
-      if (!field) {
+      // Check if field exists in entity table
+      if (s.field === 'createdAt') {
+        return s.direction === 'DESC'
+          ? sql`${entity.createdAt} DESC`
+          : sql`${entity.createdAt} ASC`;
+      } else if (s.field === 'updatedAt') {
+        return s.direction === 'DESC'
+          ? sql`${entity.updatedAt} DESC`
+          : sql`${entity.updatedAt} ASC`;
+      } else if (s.field === 'id') {
+        return s.direction === 'DESC'
+          ? sql`${entity.id} DESC`
+          : sql`${entity.id} ASC`;
+      } else if (s.field === 'namespace') {
+        return s.direction === 'DESC'
+          ? sql`${entity.namespace} DESC`
+          : sql`${entity.namespace} ASC`;
+      } else if (s.field === 'entityTypeId') {
+        return s.direction === 'DESC'
+          ? sql`${entity.entityTypeId} DESC`
+          : sql`${entity.entityTypeId} ASC`;
+      } else {
         // Default to createdAt if field not found
         return sql`${entity.createdAt} DESC`;
       }
-
-      return s.direction === 'DESC' 
-        ? sql`${field} DESC` 
-        : sql`${field} ASC`;
     });
   }
 }
