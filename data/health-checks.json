@@ -1,0 +1,362 @@
+{
+  "entityTypes": [
+    {
+      "id": "health-check-type-v1",
+      "name": "HealthCheck",
+      "namespace": "system.health",
+      "version": 1,
+      "schema": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "Unique identifier for the health check",
+            "pattern": "^[a-z0-9-]+$"
+          },
+          "displayName": {
+            "type": "string",
+            "description": "Human-readable name for the check"
+          },
+          "category": {
+            "type": "string",
+            "description": "Category of the health check",
+            "enum": ["orphans", "schema", "relations", "quality", "optimization", "consistency"]
+          },
+          "severity": {
+            "type": "string",
+            "description": "Severity level of issues found by this check",
+            "enum": ["critical", "warning", "info"]
+          },
+          "description": {
+            "type": "string",
+            "description": "Detailed description of what this check does"
+          },
+          "checkType": {
+            "type": "string",
+            "description": "Type of check implementation",
+            "enum": ["query", "validation", "analysis", "comparison"]
+          },
+          "enabled": {
+            "type": "boolean",
+            "description": "Whether this check is currently active",
+            "default": true
+          },
+          "autoFixAvailable": {
+            "type": "boolean",
+            "description": "Whether an automated fix is available",
+            "default": false
+          },
+          "autoFixRisk": {
+            "type": "string",
+            "description": "Risk level of applying the auto-fix",
+            "enum": ["safe", "moderate", "dangerous"]
+          },
+          "autoFixDescription": {
+            "type": "string",
+            "description": "Description of what the auto-fix does"
+          }
+        },
+        "required": ["name", "displayName", "category", "severity", "description", "checkType"],
+        "additionalProperties": false
+      }
+    }
+  ],
+  "entities": [
+    {
+      "id": "hc-orphaned-entities",
+      "type": "HealthCheck",
+      "data": {
+        "name": "orphaned-entities",
+        "displayName": "Orphaned Entities",
+        "category": "orphans",
+        "severity": "critical",
+        "description": "Detects entities whose EntityType no longer exists in the system. These entities cannot be validated or properly managed.",
+        "checkType": "query",
+        "enabled": true,
+        "autoFixAvailable": true,
+        "autoFixRisk": "dangerous",
+        "autoFixDescription": "Permanently delete all orphaned entities. This action cannot be undone."
+      }
+    },
+    {
+      "id": "hc-orphaned-relations",
+      "type": "HealthCheck",
+      "data": {
+        "name": "orphaned-relations",
+        "displayName": "Orphaned Relations",
+        "category": "orphans",
+        "severity": "critical",
+        "description": "Detects relations that point to non-existent entities or use non-existent relation types.",
+        "checkType": "query",
+        "enabled": true,
+        "autoFixAvailable": true,
+        "autoFixRisk": "safe",
+        "autoFixDescription": "Remove all relations with broken references. This is generally safe as the relations are already non-functional."
+      }
+    },
+    {
+      "id": "hc-schema-validation",
+      "type": "HealthCheck",
+      "data": {
+        "name": "schema-validation-failures",
+        "displayName": "Schema Validation Failures",
+        "category": "schema",
+        "severity": "warning",
+        "description": "Identifies entities that no longer pass validation against their current EntityType schema. This could happen if schema was updated with new constraints.",
+        "checkType": "validation",
+        "enabled": true,
+        "autoFixAvailable": false
+      }
+    },
+    {
+      "id": "hc-outdated-schema-versions",
+      "type": "HealthCheck",
+      "data": {
+        "name": "outdated-schema-versions",
+        "displayName": "Outdated Schema Versions",
+        "category": "schema",
+        "severity": "info",
+        "description": "Finds entities using older versions of their EntityType schema. While not critical, updating may provide access to new features.",
+        "checkType": "comparison",
+        "enabled": true,
+        "autoFixAvailable": true,
+        "autoFixRisk": "moderate",
+        "autoFixDescription": "Update entity metadata to reference the latest schema version. Data remains unchanged."
+      }
+    },
+    {
+      "id": "hc-missing-required-fields",
+      "type": "HealthCheck",
+      "data": {
+        "name": "missing-required-fields",
+        "displayName": "Missing Required Fields",
+        "category": "schema",
+        "severity": "warning",
+        "description": "Detects entities that are missing fields marked as required in their schema. This indicates data integrity issues.",
+        "checkType": "validation",
+        "enabled": true,
+        "autoFixAvailable": true,
+        "autoFixRisk": "moderate",
+        "autoFixDescription": "Add missing required fields with default values based on field type."
+      }
+    },
+    {
+      "id": "hc-unknown-fields",
+      "type": "HealthCheck",
+      "data": {
+        "name": "unknown-fields",
+        "displayName": "Unknown Fields",
+        "category": "schema",
+        "severity": "info",
+        "description": "Identifies entities containing fields not defined in their schema. May indicate schema drift or data migration issues.",
+        "checkType": "validation",
+        "enabled": true,
+        "autoFixAvailable": true,
+        "autoFixRisk": "moderate",
+        "autoFixDescription": "Remove fields not defined in the schema. Removed data will be logged."
+      }
+    },
+    {
+      "id": "hc-relation-type-mismatch",
+      "type": "HealthCheck",
+      "data": {
+        "name": "relation-type-mismatch",
+        "displayName": "Relation Type Mismatch",
+        "category": "relations",
+        "severity": "critical",
+        "description": "Finds relations where the connected entities don't match the expected EntityTypes defined in the RelationType.",
+        "checkType": "comparison",
+        "enabled": true,
+        "autoFixAvailable": true,
+        "autoFixRisk": "safe",
+        "autoFixDescription": "Remove relations with incorrect entity types."
+      }
+    },
+    {
+      "id": "hc-cardinality-violations",
+      "type": "HealthCheck",
+      "data": {
+        "name": "cardinality-violations",
+        "displayName": "Cardinality Violations",
+        "category": "relations",
+        "severity": "warning",
+        "description": "Detects violations of relation cardinality rules (e.g., multiple relations where only one is allowed).",
+        "checkType": "analysis",
+        "enabled": true,
+        "autoFixAvailable": false
+      }
+    },
+    {
+      "id": "hc-circular-dependencies",
+      "type": "HealthCheck",
+      "data": {
+        "name": "circular-dependencies",
+        "displayName": "Circular Dependencies",
+        "category": "relations",
+        "severity": "info",
+        "description": "Identifies circular reference chains in relations. While sometimes intentional, these can cause issues in traversal.",
+        "checkType": "analysis",
+        "enabled": true,
+        "autoFixAvailable": false
+      }
+    },
+    {
+      "id": "hc-duplicate-entities",
+      "type": "HealthCheck",
+      "data": {
+        "name": "duplicate-entities",
+        "displayName": "Duplicate Entities",
+        "category": "quality",
+        "severity": "warning",
+        "description": "Finds entities of the same type with identical data, which may indicate data duplication issues.",
+        "checkType": "analysis",
+        "enabled": true,
+        "autoFixAvailable": true,
+        "autoFixRisk": "moderate",
+        "autoFixDescription": "Merge duplicate entities, updating relations to point to a single instance."
+      }
+    },
+    {
+      "id": "hc-suspicious-dates",
+      "type": "HealthCheck",
+      "data": {
+        "name": "suspicious-dates",
+        "displayName": "Suspicious Date Values",
+        "category": "quality",
+        "severity": "info",
+        "description": "Identifies date fields with suspicious values (far future, far past, or invalid formats).",
+        "checkType": "validation",
+        "enabled": true,
+        "autoFixAvailable": false
+      }
+    },
+    {
+      "id": "hc-empty-required-fields",
+      "type": "HealthCheck",
+      "data": {
+        "name": "empty-required-fields",
+        "displayName": "Empty Required Fields",
+        "category": "quality",
+        "severity": "warning",
+        "description": "Finds required fields that contain empty strings or whitespace-only values.",
+        "checkType": "validation",
+        "enabled": true,
+        "autoFixAvailable": false
+      }
+    },
+    {
+      "id": "hc-oversized-fields",
+      "type": "HealthCheck",
+      "data": {
+        "name": "oversized-fields",
+        "displayName": "Oversized Field Values",
+        "category": "quality",
+        "severity": "info",
+        "description": "Detects string fields exceeding reasonable length limits, which may impact performance.",
+        "checkType": "validation",
+        "enabled": true,
+        "autoFixAvailable": false
+      }
+    },
+    {
+      "id": "hc-unused-entity-types",
+      "type": "HealthCheck",
+      "data": {
+        "name": "unused-entity-types",
+        "displayName": "Unused Entity Types",
+        "category": "optimization",
+        "severity": "info",
+        "description": "Identifies EntityTypes with no associated entities. May indicate obsolete types that can be archived.",
+        "checkType": "query",
+        "enabled": true,
+        "autoFixAvailable": false
+      }
+    },
+    {
+      "id": "hc-unused-relation-types",
+      "type": "HealthCheck",
+      "data": {
+        "name": "unused-relation-types",
+        "displayName": "Unused Relation Types",
+        "category": "optimization",
+        "severity": "info",
+        "description": "Identifies RelationTypes with no associated relations. May indicate obsolete types that can be archived.",
+        "checkType": "query",
+        "enabled": true,
+        "autoFixAvailable": false
+      }
+    },
+    {
+      "id": "hc-large-entities",
+      "type": "HealthCheck",
+      "data": {
+        "name": "large-entities",
+        "displayName": "Abnormally Large Entities",
+        "category": "optimization",
+        "severity": "info",
+        "description": "Finds entities with unusually large data payloads that might benefit from splitting or optimization.",
+        "checkType": "analysis",
+        "enabled": true,
+        "autoFixAvailable": false
+      }
+    },
+    {
+      "id": "hc-cross-namespace-relations",
+      "type": "HealthCheck",
+      "data": {
+        "name": "cross-namespace-relations",
+        "displayName": "Cross-Namespace Relations",
+        "category": "consistency",
+        "severity": "info",
+        "description": "Identifies relations that cross namespace boundaries. While valid, these may need special attention for data governance.",
+        "checkType": "query",
+        "enabled": true,
+        "autoFixAvailable": false
+      }
+    },
+    {
+      "id": "hc-namespace-consistency",
+      "type": "HealthCheck",
+      "data": {
+        "name": "namespace-consistency",
+        "displayName": "Namespace Consistency",
+        "category": "consistency",
+        "severity": "warning",
+        "description": "Checks if entities are in appropriate namespaces based on their EntityType's namespace.",
+        "checkType": "comparison",
+        "enabled": true,
+        "autoFixAvailable": false
+      }
+    },
+    {
+      "id": "hc-null-entity-type-id",
+      "type": "HealthCheck",
+      "data": {
+        "name": "null-entity-type-id",
+        "displayName": "Null Entity Type ID",
+        "category": "orphans",
+        "severity": "critical",
+        "description": "Detects entities with null or undefined entityTypeId, which indicates severe data corruption.",
+        "checkType": "query",
+        "enabled": true,
+        "autoFixAvailable": true,
+        "autoFixRisk": "dangerous",
+        "autoFixDescription": "Delete entities with null entity type IDs as they cannot be properly typed."
+      }
+    },
+    {
+      "id": "hc-invalid-json-data",
+      "type": "HealthCheck",
+      "data": {
+        "name": "invalid-json-data",
+        "displayName": "Invalid JSON Data",
+        "category": "quality",
+        "severity": "critical",
+        "description": "Finds entities or relations with malformed JSON in their data or metadata fields.",
+        "checkType": "validation",
+        "enabled": true,
+        "autoFixAvailable": false
+      }
+    }
+  ]
+}

@@ -1,0 +1,192 @@
+{
+  "timestamp": "2025-08-19T01:35:17.067Z",
+  "summary": {
+    "total": 9,
+    "passed": 5,
+    "critical": 0,
+    "warning": 0,
+    "info": 4,
+    "totalIssues": 7
+  },
+  "results": [
+    {
+      "checkId": "hc-outdated-schema-versions",
+      "checkName": "outdated-schema-versions",
+      "displayName": "Outdated Schema Versions",
+      "category": "schema",
+      "severity": "info",
+      "passed": true,
+      "issues": [],
+      "stats": {
+        "totalChecked": 25,
+        "issuesFound": 0
+      },
+      "autoFixAvailable": true,
+      "autoFixRisk": "moderate"
+    },
+    {
+      "checkId": "hc-unknown-fields",
+      "checkName": "unknown-fields",
+      "displayName": "Unknown Fields",
+      "category": "schema",
+      "severity": "info",
+      "passed": true,
+      "issues": [],
+      "stats": {
+        "totalChecked": 25,
+        "issuesFound": 0
+      },
+      "autoFixAvailable": true,
+      "autoFixRisk": "moderate"
+    },
+    {
+      "checkId": "hc-circular-dependencies",
+      "checkName": "circular-dependencies",
+      "displayName": "Circular Dependencies",
+      "category": "relations",
+      "severity": "info",
+      "passed": false,
+      "issues": [
+        {
+          "description": "Check circular-dependencies not implemented"
+        }
+      ],
+      "stats": {
+        "totalChecked": 0,
+        "issuesFound": 1
+      },
+      "autoFixAvailable": false
+    },
+    {
+      "checkId": "hc-suspicious-dates",
+      "checkName": "suspicious-dates",
+      "displayName": "Suspicious Date Values",
+      "category": "quality",
+      "severity": "info",
+      "passed": true,
+      "issues": [],
+      "stats": {
+        "totalChecked": 25,
+        "issuesFound": 0
+      },
+      "autoFixAvailable": false
+    },
+    {
+      "checkId": "hc-oversized-fields",
+      "checkName": "oversized-fields",
+      "displayName": "Oversized Field Values",
+      "category": "quality",
+      "severity": "info",
+      "passed": false,
+      "issues": [
+        {
+          "description": "Check oversized-fields not implemented"
+        }
+      ],
+      "stats": {
+        "totalChecked": 0,
+        "issuesFound": 1
+      },
+      "autoFixAvailable": false
+    },
+    {
+      "checkId": "hc-unused-entity-types",
+      "checkName": "unused-entity-types",
+      "displayName": "Unused Entity Types",
+      "category": "optimization",
+      "severity": "info",
+      "passed": false,
+      "issues": [
+        {
+          "typeId": "ab0c5c77-a8d6-4d1e-a3a8-29dd12232313",
+          "description": "EntityType \"SimpleTest\" has no entities",
+          "details": {
+            "typeName": "SimpleTest",
+            "namespace": "test"
+          }
+        },
+        {
+          "typeId": "570fea51-62a6-4ed6-980a-7b22e667cab5",
+          "description": "EntityType \"Meeting\" has no entities",
+          "details": {
+            "typeName": "Meeting",
+            "namespace": "work.acme"
+          }
+        },
+        {
+          "typeId": "e672813b-c6b4-403f-8a63-59fb4b7a4010",
+          "description": "EntityType \"Person\" has no entities",
+          "details": {
+            "typeName": "Person",
+            "namespace": "global"
+          }
+        },
+        {
+          "typeId": "d54aef08-8ed8-4849-9b7a-2fc7d0e895ed",
+          "description": "EntityType \"Order\" has no entities",
+          "details": {
+            "typeName": "Order",
+            "namespace": "store"
+          }
+        }
+      ],
+      "stats": {
+        "totalChecked": 13,
+        "issuesFound": 4
+      },
+      "autoFixAvailable": false
+    },
+    {
+      "checkId": "hc-unused-relation-types",
+      "checkName": "unused-relation-types",
+      "displayName": "Unused Relation Types",
+      "category": "optimization",
+      "severity": "info",
+      "passed": true,
+      "issues": [],
+      "stats": {
+        "totalChecked": 6,
+        "issuesFound": 0
+      },
+      "autoFixAvailable": false
+    },
+    {
+      "checkId": "hc-large-entities",
+      "checkName": "large-entities",
+      "displayName": "Abnormally Large Entities",
+      "category": "optimization",
+      "severity": "info",
+      "passed": true,
+      "issues": [],
+      "stats": {
+        "totalChecked": 25,
+        "issuesFound": 0
+      },
+      "autoFixAvailable": false
+    },
+    {
+      "checkId": "hc-cross-namespace-relations",
+      "checkName": "cross-namespace-relations",
+      "displayName": "Cross-Namespace Relations",
+      "category": "consistency",
+      "severity": "info",
+      "passed": false,
+      "issues": [
+        {
+          "relationId": "1a846a46-89c9-4a3f-bd65-b75b85cff63e",
+          "description": "Relation crosses namespace boundaries",
+          "details": {
+            "relationNamespace": "tasks",
+            "fromNamespace": "tasks",
+            "toNamespace": "example"
+          }
+        }
+      ],
+      "stats": {
+        "totalChecked": 12,
+        "issuesFound": 1
+      },
+      "autoFixAvailable": false
+    }
+  ]
+}
