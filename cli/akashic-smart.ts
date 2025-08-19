@@ -931,7 +931,7 @@ const commands = {
   async apply(args: string[]) {
     if (args.length === 0) {
       console.error(
-        `${colors.red}Usage: akashic apply <file.yaml|directory> [--dry-run] [--verbose]${colors.reset}`
+        `${colors.red}Usage: akashic apply <file.yaml|directory> [--dry-run] [--verbose]${colors.reset}`,
       );
       process.exit(1);
     }
@@ -943,7 +943,9 @@ const commands = {
 
     try {
       // Parse YAML file/directory
-      console.log(`${colors.cyan}📖 Parsing ontology from: ${source}${colors.reset}`);
+      console.log(
+        `${colors.cyan}📖 Parsing ontology from: ${source}${colors.reset}`,
+      );
       const { ontology, errors } = await parseOntology(source);
 
       if (errors.length > 0) {
@@ -962,13 +964,17 @@ const commands = {
       console.log(formatDiff(diff));
 
       if (diff.summary.totalChanges === 0) {
-        console.log(`\n${colors.green}✅ Ontology is up to date!${colors.reset}`);
+        console.log(
+          `\n${colors.green}✅ Ontology is up to date!${colors.reset}`,
+        );
         return;
       }
 
       // Apply changes (or dry-run)
       if (dryRun) {
-        console.log(`\n${colors.yellow}🔍 Dry run complete - no changes applied${colors.reset}`);
+        console.log(
+          `\n${colors.yellow}🔍 Dry run complete - no changes applied${colors.reset}`,
+        );
         return;
       }
 
@@ -979,8 +985,8 @@ const commands = {
             type: 'confirm',
             name: 'proceed',
             message: `Apply ${diff.summary.totalChanges} changes?`,
-            default: false
-          }
+            default: false,
+          },
         ]);
 
         if (!confirm.proceed) {
@@ -990,16 +996,18 @@ const commands = {
       }
 
       // Apply the changes
-      const result = await applyDiff(diff, { 
-        dryRun: false, 
+      const result = await applyDiff(diff, {
+        dryRun: false,
         verbose,
-        allowDeletes
+        allowDeletes,
       });
 
       // Report results
       console.log('');
       if (result.success) {
-        console.log(`${colors.green}✅ All changes applied successfully!${colors.reset}`);
+        console.log(
+          `${colors.green}✅ All changes applied successfully!${colors.reset}`,
+        );
       } else {
         console.log(`${colors.yellow}⚠️  Some changes failed:${colors.reset}`);
         for (const error of result.errors) {
@@ -1020,7 +1028,6 @@ const commands = {
           console.log(`  ❌ ${item}`);
         }
       }
-
     } catch (error: any) {
       console.error(`${colors.red}Error: ${error.message}${colors.reset}`);
       if (verbose) {
@@ -1038,7 +1045,7 @@ const commands = {
     let outputDir: string | undefined;
     let includeSystem = false;
     let split = false;
-    
+
     for (let i = 0; i < args.length; i++) {
       if (args[i] === '--format' && args[i + 1]) {
         format = args[i + 1];
@@ -1056,29 +1063,33 @@ const commands = {
         split = true;
       }
     }
-    
+
     if (format !== 'yaml') {
-      console.error(`${colors.red}Only YAML format is currently supported${colors.reset}`);
+      console.error(
+        `${colors.red}Only YAML format is currently supported${colors.reset}`,
+      );
       process.exit(1);
     }
-    
+
     try {
       // Write progress to stderr so it doesn't mix with output
       console.error(`${colors.cyan}📤 Exporting ontology...${colors.reset}`);
-      
+
       const result = await exportToYaml({
         namespace,
         includeSystemNamespaces: includeSystem,
         splitByNamespace: split,
-        outputDir
+        outputDir,
       });
-      
+
       if (typeof result === 'string') {
         // Single file output - write to stdout (data only)
         process.stdout.write(result);
       } else {
         // Multiple files
-        console.log(`${colors.green}✅ Exported ${result.size} namespace(s)${colors.reset}`);
+        console.log(
+          `${colors.green}✅ Exported ${result.size} namespace(s)${colors.reset}`,
+        );
         for (const [ns, content] of result) {
           if (outputDir) {
             console.log(`  📁 ${ns}.yaml`);
@@ -1088,9 +1099,10 @@ const commands = {
           }
         }
       }
-      
     } catch (error: any) {
-      console.error(`${colors.red}Export failed: ${error.message}${colors.reset}`);
+      console.error(
+        `${colors.red}Export failed: ${error.message}${colors.reset}`,
+      );
       process.exit(1);
     }
   },

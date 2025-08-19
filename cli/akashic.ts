@@ -4,8 +4,6 @@
  * Command-line interface for interacting with Akashic Core API
  */
 
-import { parseArgs } from 'node:util';
-
 const API_URL = process.env.AKASHIC_API_URL || 'http://localhost:3000/graphql';
 const DEFAULT_NAMESPACE = process.env.AKASHIC_NAMESPACE || 'default';
 
