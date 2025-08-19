@@ -1,7 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { QueryBuilderService } from './query-builder.service';
 import { EntityFilterInput, QueryOperator } from './dto/query-filter.dto';
-import { sql } from 'drizzle-orm';
 
 describe('QueryBuilderService', () => {
   let service: QueryBuilderService;
@@ -53,7 +52,7 @@ describe('QueryBuilderService', () => {
       const conditions = service.buildWhereConditions(filter);
 
       expect(conditions).toHaveLength(4);
-      conditions.forEach(condition => {
+      conditions.forEach((condition) => {
         expect(condition).toBeDefined();
       });
     });
@@ -115,7 +114,7 @@ describe('QueryBuilderService', () => {
 
       // Should have namespace, entityTypeId, 1 combined data condition, and createdAfter
       expect(conditions).toHaveLength(4);
-      conditions.forEach(condition => {
+      conditions.forEach((condition) => {
         expect(condition).toBeDefined();
       });
     });
@@ -138,7 +137,7 @@ describe('QueryBuilderService', () => {
       const orderBy = service.buildOrderBy(sort);
 
       expect(orderBy).toHaveLength(2);
-      orderBy.forEach(order => {
+      orderBy.forEach((order) => {
         expect(order).toBeDefined();
       });
     });
@@ -152,15 +151,13 @@ describe('QueryBuilderService', () => {
       const orderBy = service.buildOrderBy(sort);
 
       expect(orderBy).toHaveLength(2);
-      orderBy.forEach(order => {
+      orderBy.forEach((order) => {
         expect(order).toBeDefined();
       });
     });
 
     it('should handle invalid field names gracefully', () => {
-      const sort = [
-        { field: 'nonexistent', direction: 'ASC' as const },
-      ];
+      const sort = [{ field: 'nonexistent', direction: 'ASC' as const }];
 
       const orderBy = service.buildOrderBy(sort);
 

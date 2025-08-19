@@ -63,5 +63,5 @@ export interface QueryCondition {
 }
 
 export interface DataQuery {
-  [fieldPath: string]: any | QueryCondition;
+  [fieldPath: string]: any;
 }

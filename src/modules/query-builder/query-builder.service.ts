@@ -1,7 +1,11 @@
 import { Injectable } from '@nestjs/common';
-import { SQL, sql, and, or, eq, ne, gt, gte, lt, lte, inArray, like } from 'drizzle-orm';
+import { SQL, sql, and, eq, gte, lte } from 'drizzle-orm';
 import { entity } from '../../db/schema';
-import { EntityFilterInput, QueryOperator, DataQuery } from './dto/query-filter.dto';
+import {
+  EntityFilterInput,
+  QueryOperator,
+  DataQuery,
+} from './dto/query-filter.dto';
 
 @Injectable()
 export class QueryBuilderService {
@@ -39,7 +43,7 @@ export class QueryBuilderService {
 
     // JSON data filters
     if (filter.data) {
-      const jsonConditions = this.buildJsonConditions(filter.data);
+      const jsonConditions = this.buildJsonConditions(filter.data as DataQuery);
       if (jsonConditions) {
         conditions.push(jsonConditions);
       }
@@ -57,8 +61,14 @@ export class QueryBuilderService {
     for (const [fieldPath, value] of Object.entries(dataQuery)) {
       if (value && typeof value === 'object' && !Array.isArray(value)) {
         // Handle operator-based queries
-        for (const [operator, operand] of Object.entries(value)) {
-          const condition = this.buildJsonOperatorCondition(fieldPath, operator as QueryOperator, operand);
+        for (const [operator, operand] of Object.entries(
+          value as Record<string, unknown>,
+        )) {
+          const condition = this.buildJsonOperatorCondition(
+            fieldPath,
+            operator as QueryOperator,
+            operand,
+          );
           if (condition) {
             conditions.push(condition);
           }
@@ -77,7 +87,11 @@ export class QueryBuilderService {
   /**
    * Build condition for a specific JSON operator
    */
-  private buildJsonOperatorCondition(fieldPath: string, operator: QueryOperator, value: any): SQL | null {
+  private buildJsonOperatorCondition(
+    fieldPath: string,
+    operator: QueryOperator,
+    value: any,
+  ): SQL | null {
     const jsonPath = this.buildJsonPath(fieldPath);
 
     switch (operator) {
@@ -99,19 +113,23 @@ export class QueryBuilderService {
       case QueryOperator.LESS_THAN_OR_EQUAL:
         return sql`(${jsonPath})::numeric <= ${value}`;
 
-      case QueryOperator.IN:
+      case QueryOperator.IN: {
         if (!Array.isArray(value)) return null;
-        const inValues = value.map(v => JSON.stringify(v)).join(',');
+        const inValues = value.map((v) => JSON.stringify(v)).join(',');
         return sql`${jsonPath} IN (${sql.raw(inValues)})`;
+      }
 
-      case QueryOperator.NOT_IN:
+      case QueryOperator.NOT_IN: {
         if (!Array.isArray(value)) return null;
-        const ninValues = value.map(v => JSON.stringify(v)).join(',');
+        const ninValues = value.map((v) => JSON.stringify(v)).join(',');
         return sql`${jsonPath} NOT IN (${sql.raw(ninValues)})`;
+      }
 
-      case QueryOperator.CONTAINS:
+      case QueryOperator.CONTAINS: {
         // For arrays or strings
-        return sql`${entity.data} @> ${JSON.stringify({ [fieldPath]: value })}::jsonb`;
+        const containsValue = { [fieldPath]: value as unknown };
+        return sql`${entity.data} @> ${JSON.stringify(containsValue)}::jsonb`;
+      }
 
       case QueryOperator.EXISTS:
         if (value === true) {
@@ -134,15 +152,15 @@ export class QueryBuilderService {
    */
   private buildJsonEqualsCondition(fieldPath: string, value: any): SQL {
     const jsonPath = this.buildJsonPath(fieldPath);
-    
+
     if (value === null) {
       return sql`${jsonPath} IS NULL`;
     }
-    
+
     if (typeof value === 'string') {
       return sql`${jsonPath} ->> 0 = ${value}`;
     }
-    
+
     return sql`${jsonPath} = ${JSON.stringify(value)}::jsonb`;
   }
 
@@ -152,7 +170,7 @@ export class QueryBuilderService {
   private buildJsonPath(fieldPath: string): SQL {
     const parts = fieldPath.split('.');
     let path = sql`${entity.data}`;
-    
+
     for (const part of parts) {
       // Handle array indices like "tags[0]"
       const arrayMatch = part.match(/^(\w+)\[(\d+)\]$/);
@@ -163,7 +181,7 @@ export class QueryBuilderService {
         path = sql`${path}->'${sql.raw(part)}'`;
       }
     }
-    
+
     return path;
   }
 
@@ -175,25 +193,23 @@ export class QueryBuilderService {
       return [sql`${entity.createdAt} DESC`];
     }
 
-    return sort.map(s => {
+    return sort.map((s) => {
       // Handle JSON field sorting
       if (s.field.startsWith('data.')) {
         const jsonPath = this.buildJsonPath(s.field.substring(5));
-        return s.direction === 'DESC' 
-          ? sql`${jsonPath} DESC` 
+        return s.direction === 'DESC'
+          ? sql`${jsonPath} DESC`
           : sql`${jsonPath} ASC`;
       }
 
       // Handle regular fields
-      const field = (entity as any)[s.field];
+      const field = (entity as unknown as Record<string, unknown>)[s.field];
       if (!field) {
         // Default to createdAt if field not found
         return sql`${entity.createdAt} DESC`;
       }
 
-      return s.direction === 'DESC' 
-        ? sql`${field} DESC` 
-        : sql`${field} ASC`;
+      return s.direction === 'DESC' ? sql`${field} DESC` : sql`${field} ASC`;
     });
   }
 }
