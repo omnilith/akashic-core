@@ -778,13 +778,135 @@ const commands = {
 
   // Search for entities by field values
   async search(args: string[]) {
-    console.log(`\n${colors.cyan}Search Entities${colors.reset}\n`);
+    const parseArgs = () => {
+      const options: any = {
+        filter: {},
+      };
 
-    // Parse search criteria
-    let searchType: string | undefined;
-    let searchField: string | undefined;
-    let searchValue: string | undefined;
-    let namespace = DEFAULT_NAMESPACE;
+      for (let i = 0; i < args.length; i++) {
+        if (args[i] === '--type' && args[i + 1]) {
+          options.filter.entityTypeId = schemaHelper.resolveTypeId(args[i + 1]);
+          i++;
+        } else if (args[i] === '--namespace' && args[i + 1]) {
+          options.filter.namespace = args[i + 1];
+          i++;
+        } else if (args[i] === '--query' && args[i + 1]) {
+          try {
+            const query = args[i + 1];
+            if (query.startsWith('{')) {
+              options.filter.data = JSON.parse(query);
+            } else {
+              const [key, value] = query.split('=');
+              if (key && value) {
+                options.filter.data = { [key]: value };
+              }
+            }
+          } catch (e) {
+            console.error(`Invalid query format: ${args[i + 1]}`);
+          }
+          i++;
+        } else if (args[i] === '--filter' && args[i + 1]) {
+          try {
+            const filterJson = JSON.parse(args[i + 1]);
+            options.filter = { ...options.filter, ...filterJson };
+          } catch (e) {
+            console.error(`Invalid filter JSON: ${args[i + 1]}`);
+          }
+          i++;
+        } else if (args[i] === '--limit' && args[i + 1]) {
+          options.filter.limit = parseInt(args[i + 1]);
+          i++;
+        } else if (args[i] === '--offset' && args[i + 1]) {
+          options.filter.offset = parseInt(args[i + 1]);
+          i++;
+        } else if (!args[i].startsWith('--')) {
+          const [key, value] = args[i].split('=');
+          if (key && value) {
+            if (!options.filter.data) options.filter.data = {};
+            options.filter.data[key] = value;
+          }
+        }
+      }
+
+      if (!options.filter.limit) {
+        options.filter.limit = 20;
+      }
+
+      return options;
+    };
+
+    const options = parseArgs();
+
+    console.log(`\n${colors.cyan}Searching entities...${colors.reset}`);
+
+    const query = `
+      query SearchEntities($filter: EntityFilterInput!) {
+        searchEntities(filter: $filter) {
+          id
+          namespace
+          entityTypeId
+          data
+          createdAt
+          updatedAt
+        }
+        countEntities(filter: $filter)
+      }
+    `;
+
+    try {
+      const result = await schemaHelper.graphqlRequest(query, { filter: options.filter });
+
+      if (!result.searchEntities || result.searchEntities.length === 0) {
+        console.log(`${colors.yellow}No entities found matching the query.${colors.reset}`);
+        return;
+      }
+
+      const entities = result.searchEntities;
+      const total = result.countEntities;
+
+      console.log(`\n${colors.green}Found ${entities.length} of ${total} total matching entities:${colors.reset}\n`);
+
+      const typeIds = [...new Set(entities.map((e: any) => e.entityTypeId))];
+      const typesQuery = `
+        query GetTypes {
+          entityTypes {
+            id
+            name
+          }
+        }
+      `;
+      const typesResult = await schemaHelper.graphqlRequest(typesQuery);
+      const typeMap = new Map(typesResult.entityTypes.map((t: any) => [t.id, t.name]));
+
+      entities.forEach((entity: any) => {
+        const typeName = typeMap.get(entity.entityTypeId) || 'Unknown';
+        console.log(`${colors.bright}[${typeName}] ${entity.id}${colors.reset}`);
+        console.log(`  Namespace: ${entity.namespace}`);
+        
+        const dataKeys = Object.keys(entity.data);
+        const preview = dataKeys.slice(0, 3).reduce((acc: any, key) => {
+          acc[key] = entity.data[key];
+          return acc;
+        }, {});
+        
+        console.log(`  Data: ${JSON.stringify(preview, null, 2).split('\n').join('\n  ')}`);
+        if (dataKeys.length > 3) {
+          console.log(`  ... and ${dataKeys.length - 3} more fields`);
+        }
+        console.log();
+      });
+
+      if (entities.length < total) {
+        console.log(`${colors.dim}Showing ${entities.length} of ${total} results. Use --limit and --offset for pagination.${colors.reset}\n`);
+      }
+
+    } catch (error: any) {
+      console.error(`${colors.red}Search failed:${colors.reset}`, error.message);
+    }
+  },
+
+  // OLD SEARCH FUNCTION REMOVED - using new query builder
+  async oldSearch_removed(args: string[]) {
 
     // Parse arguments
     let i = 0;
@@ -918,7 +1040,7 @@ const commands = {
       for (const [typeId, entities] of byType) {
         const type = typeMap.get(typeId);
         console.log(
-          `${colors.cyan}${type ? type.name : 'Unknown Type'}:${colors.reset}`,
+          `${colors.cyan}${type ? (type as any).name : 'Unknown Type'}:${colors.reset}`,
         );
 
         for (const entity of entities) {
@@ -1681,7 +1803,7 @@ const commands = {
       for (const [typeId, entities] of byType) {
         const type = typeMap.get(typeId);
         console.log(
-          `${colors.cyan}${type ? type.name : 'Unknown Type'}:${colors.reset}`,
+          `${colors.cyan}${type ? (type as any).name : 'Unknown Type'}:${colors.reset}`,
         );
 
         for (const entity of entities.slice(0, 10)) {
@@ -2380,6 +2502,187 @@ ${colors.cyan}Environment Variables:${colors.reset}
   AKASHIC_API_URL      API endpoint (default: http://localhost:3000/graphql)
   AKASHIC_NAMESPACE    Default namespace (default: "default")
 `);
+  },
+
+  // Search entities - moved to commands.search
+  async searchEntities_removed(args: string[]) {
+    const parseArgs = () => {
+      const options: any = {
+        filter: {},
+      };
+
+      for (let i = 0; i < args.length; i++) {
+        if (args[i] === '--type' && args[i + 1]) {
+          options.filter.entityTypeId = schemaHelper.resolveTypeId(args[i + 1]);
+          i++;
+        } else if (args[i] === '--namespace' && args[i + 1]) {
+          options.filter.namespace = args[i + 1];
+          i++;
+        } else if (args[i] === '--query' && args[i + 1]) {
+          // Parse JSON query
+          try {
+            const query = args[i + 1];
+            // Support simple key=value or JSON format
+            if (query.startsWith('{')) {
+              options.filter.data = JSON.parse(query);
+            } else {
+              // Parse simple format like "name=John"
+              const [key, value] = query.split('=');
+              if (key && value) {
+                options.filter.data = { [key]: value };
+              }
+            }
+          } catch (e) {
+            console.error(`Invalid query format: ${args[i + 1]}`);
+          }
+          i++;
+        } else if (args[i] === '--filter' && args[i + 1]) {
+          // Full JSON filter
+          try {
+            const filterJson = JSON.parse(args[i + 1]);
+            options.filter = { ...options.filter, ...filterJson };
+          } catch (e) {
+            console.error(`Invalid filter JSON: ${args[i + 1]}`);
+          }
+          i++;
+        } else if (args[i] === '--limit' && args[i + 1]) {
+          options.filter.limit = parseInt(args[i + 1]);
+          i++;
+        } else if (args[i] === '--offset' && args[i + 1]) {
+          options.filter.offset = parseInt(args[i + 1]);
+          i++;
+        } else if (!args[i].startsWith('--')) {
+          // Simple key=value format as positional argument
+          const [key, value] = args[i].split('=');
+          if (key && value) {
+            if (!options.filter.data) options.filter.data = {};
+            options.filter.data[key] = value;
+          }
+        }
+      }
+
+      // Set default limit if not specified
+      if (!options.filter.limit) {
+        options.filter.limit = 20;
+      }
+
+      return options;
+    };
+
+    const options = parseArgs();
+
+    // Interactive mode if no filter provided
+    if (Object.keys(options.filter).length === 1 && options.filter.limit === 20) {
+      const answers = await inquirer.prompt([
+        {
+          type: 'input',
+          name: 'namespace',
+          message: 'Namespace (leave empty for all):',
+        },
+        {
+          type: 'input',
+          name: 'entityType',
+          message: 'Entity type (name or ID, leave empty for all):',
+        },
+        {
+          type: 'input',
+          name: 'query',
+          message: 'Data query (e.g., name=John or {"age": {"$gte": 18}}):',
+        },
+      ]);
+
+      if (answers.namespace) {
+        options.filter.namespace = answers.namespace;
+      }
+      if (answers.entityType) {
+        options.filter.entityTypeId = schemaHelper.resolveTypeId(answers.entityType);
+      }
+      if (answers.query) {
+        try {
+          if (answers.query.startsWith('{')) {
+            options.filter.data = JSON.parse(answers.query);
+          } else {
+            const [key, value] = answers.query.split('=');
+            if (key && value) {
+              options.filter.data = { [key]: value };
+            }
+          }
+        } catch (e) {
+          console.error('Invalid query format');
+          return;
+        }
+      }
+    }
+
+    console.log(`\n${colors.cyan}Searching entities...${colors.reset}`);
+
+    const query = `
+      query SearchEntities($filter: EntityFilterInput!) {
+        searchEntities(filter: $filter) {
+          id
+          namespace
+          entityTypeId
+          data
+          createdAt
+          updatedAt
+        }
+        countEntities(filter: $filter)
+      }
+    `;
+
+    try {
+      const result = await schemaHelper.graphqlRequest(query, { filter: options.filter });
+
+      if (!result.searchEntities || result.searchEntities.length === 0) {
+        console.log(`${colors.yellow}No entities found matching the query.${colors.reset}`);
+        return;
+      }
+
+      const entities = result.searchEntities;
+      const total = result.countEntities;
+
+      console.log(`\n${colors.green}Found ${entities.length} of ${total} total matching entities:${colors.reset}\n`);
+
+      // Get entity type names for display
+      const typeIds = [...new Set(entities.map((e: any) => e.entityTypeId))];
+      const typesQuery = `
+        query GetTypes {
+          entityTypes {
+            id
+            name
+          }
+        }
+      `;
+      const typesResult = await schemaHelper.graphqlRequest(typesQuery);
+      const typeMap = new Map(typesResult.entityTypes.map((t: any) => [t.id, t.name]));
+
+      // Display results
+      entities.forEach((entity: any) => {
+        const typeName = typeMap.get(entity.entityTypeId) || 'Unknown';
+        console.log(`${colors.bright}[${typeName}] ${entity.id}${colors.reset}`);
+        console.log(`  Namespace: ${entity.namespace}`);
+        
+        // Show first few fields of data
+        const dataKeys = Object.keys(entity.data);
+        const preview = dataKeys.slice(0, 3).reduce((acc: any, key) => {
+          acc[key] = entity.data[key];
+          return acc;
+        }, {});
+        
+        console.log(`  Data: ${JSON.stringify(preview, null, 2).split('\n').join('\n  ')}`);
+        if (dataKeys.length > 3) {
+          console.log(`  ... and ${dataKeys.length - 3} more fields`);
+        }
+        console.log();
+      });
+
+      if (entities.length < total) {
+        console.log(`${colors.dim}Showing ${entities.length} of ${total} results. Use --limit and --offset for pagination.${colors.reset}\n`);
+      }
+
+    } catch (error: any) {
+      console.error(`${colors.red}Search failed:${colors.reset}`, error.message);
+    }
   },
 };
 

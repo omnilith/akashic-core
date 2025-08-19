@@ -25,6 +25,8 @@ describe('EntitiesService', () => {
             findById: jest.fn(),
             update: jest.fn(),
             delete: jest.fn(),
+            search: jest.fn(),
+            count: jest.fn(),
           },
         },
         {
@@ -389,6 +391,90 @@ describe('EntitiesService', () => {
       );
 
       expect(eventsService.logEvent).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('search', () => {
+    it('should search entities with filter', async () => {
+      const filter = {
+        namespace: 'test',
+        entityTypeId: 'type-123',
+        data: { status: 'active' },
+        limit: 10,
+        offset: 0,
+      };
+
+      const mockEntities = [
+        {
+          id: 'entity-1',
+          namespace: 'test',
+          entityTypeId: 'type-123',
+          entityTypeVersion: 1,
+          data: { name: 'Entity 1', status: 'active' },
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        },
+        {
+          id: 'entity-2',
+          namespace: 'test',
+          entityTypeId: 'type-123',
+          entityTypeVersion: 1,
+          data: { name: 'Entity 2', status: 'active' },
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        },
+      ];
+
+      repo.search.mockResolvedValue(mockEntities);
+
+      const result = await service.search(filter);
+
+      expect(repo.search).toHaveBeenCalledWith(filter);
+      expect(result).toEqual(mockEntities);
+    });
+
+    it('should handle empty search results', async () => {
+      const filter = {
+        namespace: 'test',
+        data: { status: 'nonexistent' },
+      };
+
+      repo.search.mockResolvedValue([]);
+
+      const result = await service.search(filter);
+
+      expect(repo.search).toHaveBeenCalledWith(filter);
+      expect(result).toEqual([]);
+    });
+  });
+
+  describe('count', () => {
+    it('should count entities with filter', async () => {
+      const filter = {
+        namespace: 'test',
+        entityTypeId: 'type-123',
+        data: { status: 'active' },
+      };
+
+      repo.count.mockResolvedValue(42);
+
+      const result = await service.count(filter);
+
+      expect(repo.count).toHaveBeenCalledWith(filter);
+      expect(result).toBe(42);
+    });
+
+    it('should return 0 for no matching entities', async () => {
+      const filter = {
+        namespace: 'nonexistent',
+      };
+
+      repo.count.mockResolvedValue(0);
+
+      const result = await service.count(filter);
+
+      expect(repo.count).toHaveBeenCalledWith(filter);
+      expect(result).toBe(0);
     });
   });
 });

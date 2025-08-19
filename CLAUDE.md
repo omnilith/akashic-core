@@ -144,6 +144,21 @@ npm run akashic health --export health-report.json
 
 ## Recent Features
 
+### Query Builder & Advanced Search (August 2025)
+
+Powerful query system for searching entities by JSON data fields:
+
+- MongoDB-like query operators ($eq, $gte, $lt, $in, $regex, etc.)
+- Search within nested JSON fields
+- Pagination and sorting support
+- CLI and GraphQL interfaces
+- Examples:
+  ```bash
+  npm run akashic search status=todo
+  npm run akashic search --filter '{"data": {"age": {"$gte": 18}}}'
+  npm run akashic search edited=false --namespace example
+  ```
+
 ### Show-Type Command (August 2025)
 
 Displays complete entity type structure including:

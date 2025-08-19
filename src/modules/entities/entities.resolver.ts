@@ -1,8 +1,9 @@
 // src/modules/entities/entities.resolver.ts
-import { Resolver, Query, Mutation, Args } from '@nestjs/graphql';
+import { Resolver, Query, Mutation, Args, Int } from '@nestjs/graphql';
 import { EntitiesService } from './entities.service';
 import { EntityDto } from './dto/entity.dto';
 import { CreateEntityInput } from './dto/create-entity.input';
+import { EntityFilterInput } from '../query-builder/dto/query-filter.dto';
 
 @Resolver(() => EntityDto)
 export class EntitiesResolver {
@@ -28,5 +29,15 @@ export class EntitiesResolver {
   @Mutation(() => EntityDto)
   async updateEntity(@Args('id') id: string, @Args('data') data: string) {
     return await this.entitiesService.update(id, JSON.parse(data));
+  }
+
+  @Query(() => [EntityDto])
+  async searchEntities(@Args('filter') filter: EntityFilterInput) {
+    return await this.entitiesService.search(filter);
+  }
+
+  @Query(() => Int)
+  async countEntities(@Args('filter') filter: EntityFilterInput) {
+    return await this.entitiesService.count(filter);
   }
 }
