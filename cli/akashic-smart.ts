@@ -327,7 +327,7 @@ const commands = {
 
       // Update entity
       const mutation = `
-        mutation UpdateEntity($id: String!, $data: JSON!) {
+        mutation UpdateEntity($id: String!, $data: String!) {
           updateEntity(id: $id, data: $data) {
             id
             data
@@ -338,7 +338,7 @@ const commands = {
 
       const result = await schemaHelper.graphqlRequest(mutation, {
         id: entityId,
-        data: newData,
+        data: JSON.stringify(newData),
       });
 
       console.log(

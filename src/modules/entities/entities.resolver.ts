@@ -24,4 +24,9 @@ export class EntitiesResolver {
   ) {
     return await this.entitiesService.findAll(namespace, entityTypeId);
   }
+
+  @Mutation(() => EntityDto)
+  async updateEntity(@Args('id') id: string, @Args('data') data: string) {
+    return await this.entitiesService.update(id, JSON.parse(data));
+  }
 }

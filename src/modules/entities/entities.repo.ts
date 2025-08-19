@@ -46,4 +46,17 @@ export class EntitiesRepo {
 
     return found || null;
   }
+
+  async update(id: string, data: any): Promise<Entity | null> {
+    const [updated] = await this.drizzle.db
+      .update(entity)
+      .set({
+        data,
+        updatedAt: new Date(),
+      })
+      .where(eq(entity.id, id))
+      .returning();
+
+    return updated || null;
+  }
 }

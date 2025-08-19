@@ -63,4 +63,55 @@ export class EntitiesService {
   async findById(id: string) {
     return await this.entitiesRepo.findById(id);
   }
+
+  async update(id: string, data: unknown) {
+    // 1. Find the existing entity
+    const existingEntity = await this.entitiesRepo.findById(id);
+    if (!existingEntity) {
+      throw new BadRequestException('Entity not found');
+    }
+
+    // 2. Get the entity type and its schema
+    const entityType = await this.entityTypesService.findById(
+      existingEntity.entityTypeId!,
+    );
+    if (!entityType) {
+      throw new BadRequestException('EntityType not found');
+    }
+
+    // 3. Validate the new data against the schema
+    const validation = this.validationService.validateEntityData(
+      entityType.schemaJson,
+      data,
+    );
+
+    if (!validation.valid) {
+      throw new BadRequestException(
+        `Validation failed: ${validation.errors?.join(', ')}`,
+      );
+    }
+
+    // 4. Update the entity
+    const updatedEntity = await this.entitiesRepo.update(id, data);
+
+    if (!updatedEntity) {
+      throw new BadRequestException('Failed to update entity');
+    }
+
+    // 5. Log the update event
+    await this.eventsService.logEvent({
+      eventType: 'entity.updated',
+      resourceType: 'entity',
+      resourceId: id,
+      namespace: existingEntity.namespace,
+      payload: {
+        entityTypeId: existingEntity.entityTypeId,
+        entityTypeVersion: existingEntity.entityTypeVersion,
+        oldData: existingEntity.data,
+        newData: data,
+      },
+    });
+
+    return updatedEntity;
+  }
 }

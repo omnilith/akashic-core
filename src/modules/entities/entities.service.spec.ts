@@ -255,4 +255,140 @@ describe('EntitiesService', () => {
       expect(result).toBeNull();
     });
   });
+
+  describe('update', () => {
+    const entityId = 'entity-uuid-123';
+    const entityTypeId = 'type-uuid-456';
+    const namespace = 'test-namespace';
+    const newData = {
+      name: 'Jane Doe',
+      age: 35,
+    };
+
+    const mockExistingEntity = {
+      id: entityId,
+      namespace,
+      entityTypeId,
+      entityTypeVersion: 1,
+      data: { name: 'John Doe', age: 30 },
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    };
+
+    const mockEntityType = {
+      id: entityTypeId,
+      namespace,
+      name: 'Person',
+      version: 1,
+      schemaJson: {
+        type: 'object',
+        properties: {
+          name: { type: 'string' },
+          age: { type: 'number' },
+        },
+        required: ['name'],
+      },
+      createdAt: new Date(),
+    };
+
+    it('should update an entity with valid data', async () => {
+      const mockUpdatedEntity = {
+        ...mockExistingEntity,
+        data: newData,
+        updatedAt: new Date(),
+      };
+
+      repo.findById.mockResolvedValue(mockExistingEntity);
+      entityTypesService.findById.mockResolvedValue(mockEntityType);
+      validationService.validateEntityData.mockReturnValue({
+        valid: true,
+        errors: null,
+      });
+      repo.update.mockResolvedValue(mockUpdatedEntity);
+      eventsService.logEvent.mockResolvedValue(undefined);
+
+      const result = await service.update(entityId, newData);
+
+      expect(repo.findById).toHaveBeenCalledWith(entityId);
+      expect(entityTypesService.findById).toHaveBeenCalledWith(entityTypeId);
+      expect(validationService.validateEntityData).toHaveBeenCalledWith(
+        mockEntityType.schemaJson,
+        newData,
+      );
+      expect(repo.update).toHaveBeenCalledWith(entityId, newData);
+      expect(eventsService.logEvent).toHaveBeenCalledWith({
+        eventType: 'entity.updated',
+        resourceType: 'entity',
+        resourceId: entityId,
+        namespace,
+        payload: {
+          entityTypeId,
+          entityTypeVersion: 1,
+          oldData: mockExistingEntity.data,
+          newData,
+        },
+      });
+      expect(result).toEqual(mockUpdatedEntity);
+    });
+
+    it('should throw BadRequestException when entity not found', async () => {
+      repo.findById.mockResolvedValue(null);
+
+      await expect(service.update(entityId, newData)).rejects.toThrow(
+        new BadRequestException('Entity not found'),
+      );
+
+      expect(entityTypesService.findById).not.toHaveBeenCalled();
+      expect(validationService.validateEntityData).not.toHaveBeenCalled();
+      expect(repo.update).not.toHaveBeenCalled();
+      expect(eventsService.logEvent).not.toHaveBeenCalled();
+    });
+
+    it('should throw BadRequestException when entity type not found', async () => {
+      repo.findById.mockResolvedValue(mockExistingEntity);
+      entityTypesService.findById.mockResolvedValue(null);
+
+      await expect(service.update(entityId, newData)).rejects.toThrow(
+        new BadRequestException('EntityType not found'),
+      );
+
+      expect(validationService.validateEntityData).not.toHaveBeenCalled();
+      expect(repo.update).not.toHaveBeenCalled();
+      expect(eventsService.logEvent).not.toHaveBeenCalled();
+    });
+
+    it('should throw BadRequestException when validation fails', async () => {
+      const invalidData = { name: 123 }; // Name should be string
+
+      repo.findById.mockResolvedValue(mockExistingEntity);
+      entityTypesService.findById.mockResolvedValue(mockEntityType);
+      validationService.validateEntityData.mockReturnValue({
+        valid: false,
+        errors: ['name: must be string'],
+      });
+
+      await expect(service.update(entityId, invalidData)).rejects.toThrow(
+        new BadRequestException('Validation failed: name: must be string'),
+      );
+
+      expect(repo.update).not.toHaveBeenCalled();
+      expect(eventsService.logEvent).not.toHaveBeenCalled();
+    });
+
+    it('should throw BadRequestException when update fails', async () => {
+      repo.findById.mockResolvedValue(mockExistingEntity);
+      entityTypesService.findById.mockResolvedValue(mockEntityType);
+      validationService.validateEntityData.mockReturnValue({
+        valid: true,
+        errors: null,
+      });
+      repo.update.mockResolvedValue(null);
+
+      await expect(service.update(entityId, newData)).rejects.toThrow(
+        new BadRequestException('Failed to update entity'),
+      );
+
+      expect(eventsService.logEvent).not.toHaveBeenCalled();
+    });
+  });
 });
