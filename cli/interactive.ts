@@ -80,7 +80,9 @@ export async function promptForEntityUpdate(
     if (answers[field.name] !== undefined && answers[field.name] !== '') {
       const processed = processAnswer(field, answers[field.name]);
       // Only include if different from current value
-      if (JSON.stringify(processed) !== JSON.stringify(currentData[field.name])) {
+      if (
+        JSON.stringify(processed) !== JSON.stringify(currentData[field.name])
+      ) {
         result[field.name] = processed;
       }
     }
