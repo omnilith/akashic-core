@@ -46,12 +46,43 @@ const commands = {
   },
 
   // List registered types
-  async types() {
+  async types(args: string[] = []) {
+    // Parse namespace filter if provided
+    let namespaceFilter: string | undefined;
+    for (let i = 0; i < args.length; i++) {
+      if (args[i] === '--namespace' && args[i + 1]) {
+        namespaceFilter = args[i + 1];
+        break;
+      }
+    }
+
     console.log(`\n${colors.cyan}Registered Type Aliases:${colors.reset}\n`);
     schemaHelper.listTypeAliases();
 
-    console.log(`\n${colors.cyan}Available Entity Types:${colors.reset}\n`);
-    const types = await schemaHelper.fetchAllEntityTypes();
+    // Fetch and filter types
+    let types = await schemaHelper.fetchAllEntityTypes();
+    const totalTypes = types.length;
+
+    if (namespaceFilter) {
+      types = types.filter((type) => type.namespace === namespaceFilter);
+      console.log(
+        `\n${colors.cyan}Entity Types in namespace '${namespaceFilter}':${colors.reset}`,
+      );
+      console.log(
+        `${colors.dim}(Showing ${types.length} of ${totalTypes} total types)${colors.reset}\n`,
+      );
+    } else {
+      console.log(`\n${colors.cyan}Available Entity Types:${colors.reset}\n`);
+    }
+
+    if (types.length === 0) {
+      console.log(
+        `  ${colors.yellow}No entity types found${
+          namespaceFilter ? ` in namespace '${namespaceFilter}'` : ''
+        }${colors.reset}\n`,
+      );
+      return;
+    }
 
     for (const type of types) {
       const config = schemaHelper.loadConfig();
@@ -112,15 +143,21 @@ const commands = {
     }
 
     // Parse namespace if provided
+    let namespaceExplicitlySet = false;
     for (let i = 0; i < args.length; i++) {
       if (args[i] === '--namespace' && args[i + 1]) {
         namespace = args[i + 1];
+        namespaceExplicitlySet = true;
         break;
       }
     }
 
-    // For Task type, default to tasks namespace
-    if (typeName && typeName.toLowerCase() === 'task') {
+    // For Task type, default to tasks namespace (but only if not explicitly set)
+    if (
+      typeName &&
+      typeName.toLowerCase() === 'task' &&
+      !namespaceExplicitlySet
+    ) {
       namespace = 'tasks';
     }
 
@@ -221,17 +258,19 @@ const commands = {
 
     const typeName = args[0];
     let namespace = DEFAULT_NAMESPACE;
+    let namespaceExplicitlySet = false;
 
     // Check for namespace flag
     for (let i = 0; i < args.length; i++) {
       if (args[i] === '--namespace' && args[i + 1]) {
         namespace = args[i + 1];
+        namespaceExplicitlySet = true;
         break;
       }
     }
 
-    // For Task type, default to tasks namespace
-    if (typeName.toLowerCase() === 'task') {
+    // For Task type, default to tasks namespace (but only if not explicitly set)
+    if (typeName.toLowerCase() === 'task' && !namespaceExplicitlySet) {
       namespace = 'tasks';
     }
 
@@ -351,13 +390,11 @@ const commands = {
         updates = interactive.parseQuickInput(args.slice(2));
       } else {
         // Interactive mode - show current values and let user update
-        console.log(
-          `\n${colors.cyan}Current entity data:${colors.reset}`,
-        );
+        console.log(`\n${colors.cyan}Current entity data:${colors.reset}`);
         console.log(JSON.stringify(currentData, null, 2));
-        
+
         updates = await interactive.promptForEntityUpdate(fields, currentData);
-        
+
         if (Object.keys(updates).length === 0) {
           console.log(`\n${colors.yellow}No changes made.${colors.reset}`);
           return;
@@ -2519,6 +2556,7 @@ ${colors.cyan}Commands - Ontology Management:${colors.reset}
   
 ${colors.cyan}Commands - Type Management:${colors.reset}
   ${colors.green}types${colors.reset}                    List all entity types and aliases
+    --namespace <ns>       Filter by namespace
   ${colors.green}show-type <type>${colors.reset}         Show entity type structure and schema
   ${colors.green}create-type${colors.reset}              Create a new entity type (schema)
   ${colors.green}register <name> <uuid>${colors.reset}  Register a type alias
@@ -2798,7 +2836,7 @@ async function main() {
       commands.register(commandArgs);
       break;
     case 'types':
-      await commands.types();
+      await commands.types(commandArgs);
       break;
     case 'create-type':
       await commands.createType(commandArgs);
