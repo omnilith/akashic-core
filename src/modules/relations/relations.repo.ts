@@ -1,6 +1,6 @@
 // src/modules/relations/relations.repo.ts
 import { Injectable } from '@nestjs/common';
-import { DrizzleService } from '../../db/drizzle.service';
+import { DrizzleService, DrizzleTransaction } from '../../db/drizzle.service';
 import { relation, InsertRelation, Relation } from '../../db/schema';
 import { eq, and, SQL } from 'drizzle-orm';
 
@@ -8,12 +8,18 @@ import { eq, and, SQL } from 'drizzle-orm';
 export class RelationsRepo {
   constructor(private drizzle: DrizzleService) {}
 
-  async create(data: InsertRelation): Promise<Relation> {
-    const [newRelation] = await this.drizzle.db
-      .insert(relation)
-      .values(data)
-      .returning();
+  private getDb(tx?: DrizzleTransaction) {
+    // Both NodePgDatabase and NodePgTransaction share the same query interface
+    // This helper ensures we use the transaction if provided, otherwise the main db
+    return tx ?? this.drizzle.db;
+  }
 
+  async create(
+    data: InsertRelation,
+    tx?: DrizzleTransaction,
+  ): Promise<Relation> {
+    const db = this.getDb(tx);
+    const [newRelation] = await db.insert(relation).values(data).returning();
     return newRelation;
   }
 
@@ -57,8 +63,9 @@ export class RelationsRepo {
     return found || null;
   }
 
-  async delete(id: string): Promise<boolean> {
-    const result = await this.drizzle.db
+  async delete(id: string, tx?: DrizzleTransaction): Promise<boolean> {
+    const db = this.getDb(tx);
+    const result = await db
       .delete(relation)
       .where(eq(relation.id, id))
       .returning();

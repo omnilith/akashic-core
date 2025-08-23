@@ -7,6 +7,6 @@ import { EventsResolver } from './events.resolver';
 @Module({
   imports: [DbModule],
   providers: [EventsService, EventsRepo, EventsResolver],
-  exports: [EventsService],
+  exports: [EventsService, EventsRepo],
 })
 export class EventsModule {}

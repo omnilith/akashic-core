@@ -1,24 +1,29 @@
 // src/modules/entities/entities.repo.ts
 import { Injectable } from '@nestjs/common';
-import { DrizzleService } from '../../db/drizzle.service';
-import { entity, InsertEntity, Entity } from '../../db/schema';
+import { DrizzleService, DrizzleTransaction } from '../../db/drizzle.service';
+import { entity, InsertEntity, Entity, InsertEventLog } from '../../db/schema';
 import { eq, and, SQL, sql } from 'drizzle-orm';
 import { QueryBuilderService } from '../query-builder/query-builder.service';
 import { EntityFilterInput } from '../query-builder/dto/query-filter.dto';
+import { EventsRepo } from '../events/events.repo';
 
 @Injectable()
 export class EntitiesRepo {
   constructor(
     private drizzle: DrizzleService,
     private queryBuilder: QueryBuilderService,
+    private eventsRepo: EventsRepo,
   ) {}
 
-  async create(data: InsertEntity): Promise<Entity> {
-    const [newEntity] = await this.drizzle.db
-      .insert(entity)
-      .values(data)
-      .returning();
+  private getDb(tx?: DrizzleTransaction) {
+    // Both NodePgDatabase and NodePgTransaction share the same query interface
+    // This helper ensures we use the transaction if provided, otherwise the main db
+    return tx ?? this.drizzle.db;
+  }
 
+  async create(data: InsertEntity, tx?: DrizzleTransaction): Promise<Entity> {
+    const db = this.getDb(tx);
+    const [newEntity] = await db.insert(entity).values(data).returning();
     return newEntity;
   }
 
@@ -43,17 +48,19 @@ export class EntitiesRepo {
     return await this.drizzle.db.select().from(entity);
   }
 
-  async findById(id: string): Promise<Entity | null> {
-    const [found] = await this.drizzle.db
-      .select()
-      .from(entity)
-      .where(eq(entity.id, id));
-
+  async findById(id: string, tx?: DrizzleTransaction): Promise<Entity | null> {
+    const db = this.getDb(tx);
+    const [found] = await db.select().from(entity).where(eq(entity.id, id));
     return found || null;
   }
 
-  async update(id: string, data: unknown): Promise<Entity | null> {
-    const [updated] = await this.drizzle.db
+  async update(
+    id: string,
+    data: unknown,
+    tx?: DrizzleTransaction,
+  ): Promise<Entity | null> {
+    const db = this.getDb(tx);
+    const [updated] = await db
       .update(entity)
       .set({
         data,
@@ -61,7 +68,6 @@ export class EntitiesRepo {
       })
       .where(eq(entity.id, id))
       .returning();
-
     return updated || null;
   }
 
@@ -114,5 +120,38 @@ export class EntitiesRepo {
 
     const [result] = await query;
     return result?.count ?? 0;
+  }
+
+  async createWithEvent(
+    entityData: InsertEntity,
+    eventData: Omit<InsertEventLog, 'id' | 'timestamp' | 'resourceId'> & {
+      payload: any;
+    },
+  ): Promise<Entity> {
+    return await this.drizzle.transaction(async (tx) => {
+      const newEntity = await this.create(entityData, tx);
+      await this.eventsRepo.create(
+        {
+          ...eventData,
+          resourceId: newEntity.id,
+        },
+        tx,
+      );
+      return newEntity;
+    });
+  }
+
+  async updateWithEvent(
+    id: string,
+    data: unknown,
+    eventData: Omit<InsertEventLog, 'id' | 'timestamp'>,
+  ): Promise<Entity | null> {
+    return await this.drizzle.transaction(async (tx) => {
+      const updatedEntity = await this.update(id, data, tx);
+      if (updatedEntity) {
+        await this.eventsRepo.create(eventData, tx);
+      }
+      return updatedEntity;
+    });
   }
 }
