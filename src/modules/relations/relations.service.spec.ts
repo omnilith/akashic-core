@@ -5,6 +5,7 @@ import { RelationsRepo } from './relations.repo';
 import { RelationTypesService } from '../relation-types/relation-types.service';
 import { EntitiesService } from '../entities/entities.service';
 import { EventsService } from '../events/events.service';
+import { DrizzleService } from '../../db/drizzle.service';
 
 describe('RelationsService', () => {
   let service: RelationsService;
@@ -42,6 +43,13 @@ describe('RelationsService', () => {
           provide: EventsService,
           useValue: {
             logEvent: jest.fn(),
+          },
+        },
+        {
+          provide: DrizzleService,
+          useValue: {
+            transaction: jest.fn((callback) => callback({})),
+            db: {},
           },
         },
       ],

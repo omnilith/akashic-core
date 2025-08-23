@@ -49,14 +49,17 @@ describe('EventsService', () => {
 
       const result = await service.logEvent(eventData);
 
-      expect(repo.create).toHaveBeenCalledWith({
-        eventType: eventData.eventType,
-        resourceType: eventData.resourceType,
-        resourceId: eventData.resourceId,
-        namespace: eventData.namespace,
-        payload: eventData.payload as Record<string, unknown>,
-        metadata: {} as Record<string, unknown>,
-      });
+      expect(repo.create).toHaveBeenCalledWith(
+        {
+          eventType: eventData.eventType,
+          resourceType: eventData.resourceType,
+          resourceId: eventData.resourceId,
+          namespace: eventData.namespace,
+          payload: eventData.payload as Record<string, unknown>,
+          metadata: {} as Record<string, unknown>,
+        },
+        undefined, // tx parameter
+      );
       expect(result).toEqual(mockEvent);
     });
 
@@ -84,14 +87,17 @@ describe('EventsService', () => {
 
       const result = await service.logEvent(eventData);
 
-      expect(repo.create).toHaveBeenCalledWith({
-        eventType: eventData.eventType,
-        resourceType: eventData.resourceType,
-        resourceId: eventData.resourceId,
-        namespace: eventData.namespace,
-        payload: eventData.payload as Record<string, unknown>,
-        metadata: eventData.metadata as Record<string, unknown>,
-      });
+      expect(repo.create).toHaveBeenCalledWith(
+        {
+          eventType: eventData.eventType,
+          resourceType: eventData.resourceType,
+          resourceId: eventData.resourceId,
+          namespace: eventData.namespace,
+          payload: eventData.payload as Record<string, unknown>,
+          metadata: eventData.metadata as Record<string, unknown>,
+        },
+        undefined, // tx parameter
+      );
       expect(result).toEqual(mockEvent);
     });
   });

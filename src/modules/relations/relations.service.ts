@@ -8,6 +8,7 @@ import { RelationsRepo } from './relations.repo';
 import { RelationTypesService } from '../relation-types/relation-types.service';
 import { EntitiesService } from '../entities/entities.service';
 import { EventsService } from '../events/events.service';
+import { DrizzleService } from '../../db/drizzle.service';
 
 @Injectable()
 export class RelationsService {
@@ -16,6 +17,7 @@ export class RelationsService {
     private relationTypesService: RelationTypesService,
     private entitiesService: EntitiesService,
     private eventsService: EventsService,
+    private drizzleService: DrizzleService,
   ) {}
 
   async create(

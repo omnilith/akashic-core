@@ -3,7 +3,6 @@ import { Injectable, BadRequestException } from '@nestjs/common';
 import { EntitiesRepo } from './entities.repo';
 import { EntityTypesService } from '../entity-types/entity-types.service';
 import { ValidationService } from '../../lib/validation.service';
-import { EventsService } from '../events/events.service';
 import { EntityFilterInput } from '../query-builder/dto/query-filter.dto';
 
 @Injectable()
@@ -11,18 +10,17 @@ export class EntitiesService {
   constructor(
     private entitiesRepo: EntitiesRepo,
     private entityTypesService: EntityTypesService,
-    private eventsService: EventsService,
     private validationService: ValidationService,
   ) {}
 
   async create(namespace: string, entityTypeId: string, data: unknown) {
-    // 1. Get the entity type and its schema
+    // 1. Get the entity type and its schema (outside transaction)
     const entityType = await this.entityTypesService.findById(entityTypeId);
     if (!entityType) {
       throw new BadRequestException('EntityType not found');
     }
 
-    // 2. Validate the data against the schema
+    // 2. Validate the data against the schema (outside transaction)
     const validation = this.validationService.validateEntityData(
       entityType.schemaJson as Record<string, unknown>,
       data,
@@ -34,27 +32,26 @@ export class EntitiesService {
       );
     }
 
-    // 3. Create the entity
-    const entity = await this.entitiesRepo.create({
-      namespace,
-      entityTypeId,
-      entityTypeVersion: entityType.version,
-      data,
-    });
-
-    await this.eventsService.logEvent({
-      eventType: 'entity.created',
-      resourceType: 'entity',
-      resourceId: entity.id,
-      namespace,
-      payload: {
+    // 3. Create entity with event logging in transaction
+    return await this.entitiesRepo.createWithEvent(
+      {
+        namespace,
         entityTypeId,
         entityTypeVersion: entityType.version,
         data,
       },
-    });
-
-    return entity;
+      {
+        eventType: 'entity.created',
+        resourceType: 'entity',
+        namespace,
+        payload: {
+          entityTypeId,
+          entityTypeVersion: entityType.version,
+          data,
+        },
+        metadata: {},
+      },
+    );
   }
 
   async findAll(namespace?: string, entityTypeId?: string) {
@@ -74,13 +71,13 @@ export class EntitiesService {
   }
 
   async update(id: string, data: unknown) {
-    // 1. Find the existing entity
+    // 1. Find the existing entity (outside transaction)
     const existingEntity = await this.entitiesRepo.findById(id);
     if (!existingEntity) {
       throw new BadRequestException('Entity not found');
     }
 
-    // 2. Get the entity type and its schema
+    // 2. Get the entity type and its schema (outside transaction)
     const entityType = await this.entityTypesService.findById(
       existingEntity.entityTypeId!,
     );
@@ -88,7 +85,7 @@ export class EntitiesService {
       throw new BadRequestException('EntityType not found');
     }
 
-    // 3. Validate the new data against the schema
+    // 3. Validate the new data against the schema (outside transaction)
     const validation = this.validationService.validateEntityData(
       entityType.schemaJson as Record<string, unknown>,
       data,
@@ -100,15 +97,8 @@ export class EntitiesService {
       );
     }
 
-    // 4. Update the entity
-    const updatedEntity = await this.entitiesRepo.update(id, data);
-
-    if (!updatedEntity) {
-      throw new BadRequestException('Failed to update entity');
-    }
-
-    // 5. Log the update event
-    await this.eventsService.logEvent({
+    // 4. Update entity with event logging in transaction
+    const updatedEntity = await this.entitiesRepo.updateWithEvent(id, data, {
       eventType: 'entity.updated',
       resourceType: 'entity',
       resourceId: id,
@@ -119,7 +109,12 @@ export class EntitiesService {
         oldData: existingEntity.data,
         newData: data,
       },
+      metadata: {},
     });
+
+    if (!updatedEntity) {
+      throw new BadRequestException('Failed to update entity');
+    }
 
     return updatedEntity;
   }

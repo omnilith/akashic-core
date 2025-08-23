@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { DrizzleService } from '../../db/drizzle.service';
+import { DrizzleService, DrizzleTransaction } from '../../db/drizzle.service';
 import { eventLog, InsertEventLog, EventLog } from '../../db/schema';
 import { eq, and, desc, gte, SQL } from 'drizzle-orm';
 
@@ -7,12 +7,16 @@ import { eq, and, desc, gte, SQL } from 'drizzle-orm';
 export class EventsRepo {
   constructor(private drizzle: DrizzleService) {}
 
-  async create(data: InsertEventLog): Promise<EventLog> {
-    const [newEvent] = await this.drizzle.db
-      .insert(eventLog)
-      .values(data)
-      .returning();
+  private getDb(tx?: DrizzleTransaction) {
+    return (tx ?? this.drizzle.db) as typeof this.drizzle.db;
+  }
 
+  async create(
+    data: InsertEventLog,
+    tx?: DrizzleTransaction,
+  ): Promise<EventLog> {
+    const db = this.getDb(tx);
+    const [newEvent] = await db.insert(eventLog).values(data).returning();
     return newEvent;
   }
 

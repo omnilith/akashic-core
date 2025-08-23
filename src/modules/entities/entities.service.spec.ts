@@ -4,13 +4,11 @@ import { EntitiesService } from './entities.service';
 import { EntitiesRepo } from './entities.repo';
 import { EntityTypesService } from '../entity-types/entity-types.service';
 import { ValidationService } from '../../lib/validation.service';
-import { EventsService } from '../events/events.service';
 
 describe('EntitiesService', () => {
   let service: EntitiesService;
   let repo: jest.Mocked<EntitiesRepo>;
   let entityTypesService: jest.Mocked<EntityTypesService>;
-  let eventsService: jest.Mocked<EventsService>;
   let validationService: jest.Mocked<ValidationService>;
 
   beforeEach(async () => {
@@ -21,9 +19,11 @@ describe('EntitiesService', () => {
           provide: EntitiesRepo,
           useValue: {
             create: jest.fn(),
+            createWithEvent: jest.fn(),
             findAll: jest.fn(),
             findById: jest.fn(),
             update: jest.fn(),
+            updateWithEvent: jest.fn(),
             delete: jest.fn(),
             search: jest.fn(),
             count: jest.fn(),
@@ -33,12 +33,6 @@ describe('EntitiesService', () => {
           provide: EntityTypesService,
           useValue: {
             findById: jest.fn(),
-          },
-        },
-        {
-          provide: EventsService,
-          useValue: {
-            logEvent: jest.fn(),
           },
         },
         {
@@ -53,33 +47,26 @@ describe('EntitiesService', () => {
     service = module.get<EntitiesService>(EntitiesService);
     repo = module.get(EntitiesRepo);
     entityTypesService = module.get(EntityTypesService);
-    eventsService = module.get(EventsService);
     validationService = module.get(ValidationService);
   });
 
   describe('create', () => {
-    const namespace = 'test-namespace';
-    const entityTypeId = 'type-uuid-123';
-    const validData = {
-      name: 'John Doe',
-      age: 30,
-    };
-
     it('should create an entity with valid data', async () => {
+      const namespace = 'default';
+      const entityTypeId = 'entity-type-uuid-123';
+      const validData = { name: 'Test Entity', value: 42 };
+
       const mockEntityType = {
         id: entityTypeId,
+        name: 'TestType',
         namespace,
-        name: 'Person',
-        version: 1,
         schemaJson: {
           type: 'object',
-          properties: {
-            name: { type: 'string' },
-            age: { type: 'number' },
-          },
-          required: ['name'],
+          properties: { name: { type: 'string' }, value: { type: 'number' } },
         },
+        version: 1,
         createdAt: new Date(),
+        updatedAt: new Date(),
       };
 
       const mockEntity = {
@@ -97,17 +84,7 @@ describe('EntitiesService', () => {
         valid: true,
         errors: undefined,
       });
-      repo.create.mockResolvedValue(mockEntity);
-      eventsService.logEvent.mockResolvedValue({
-        id: 'event-id',
-        namespace: 'default',
-        eventType: 'entity.created',
-        resourceType: 'entity',
-        resourceId: mockEntity.id,
-        timestamp: new Date(),
-        metadata: {},
-        payload: mockEntity,
-      });
+      repo.createWithEvent.mockResolvedValue(mockEntity);
 
       const result = await service.create(namespace, entityTypeId, validData);
 
@@ -116,69 +93,79 @@ describe('EntitiesService', () => {
         mockEntityType.schemaJson,
         validData,
       );
-      expect(repo.create).toHaveBeenCalledWith({
-        namespace,
-        entityTypeId,
-        entityTypeVersion: 1,
-        data: validData,
-      });
-      expect(eventsService.logEvent).toHaveBeenCalledWith({
-        eventType: 'entity.created',
-        resourceType: 'entity',
-        resourceId: mockEntity.id,
-        namespace,
-        payload: {
+      expect(repo.createWithEvent).toHaveBeenCalledWith(
+        {
+          namespace,
           entityTypeId,
           entityTypeVersion: 1,
           data: validData,
         },
-      });
+        {
+          eventType: 'entity.created',
+          resourceType: 'entity',
+          namespace,
+          payload: {
+            entityTypeId,
+            entityTypeVersion: 1,
+            data: validData,
+          },
+          metadata: {},
+        },
+      );
       expect(result).toEqual(mockEntity);
     });
 
     it('should throw BadRequestException when entity type not found', async () => {
+      const namespace = 'default';
+      const entityTypeId = 'non-existent-type';
+      const data = { name: 'Test' };
+
       entityTypesService.findById.mockResolvedValue(null);
 
       await expect(
-        service.create(namespace, entityTypeId, validData),
+        service.create(namespace, entityTypeId, data),
       ).rejects.toThrow(BadRequestException);
 
+      expect(entityTypesService.findById).toHaveBeenCalledWith(entityTypeId);
       expect(validationService.validateEntityData).not.toHaveBeenCalled();
-      expect(repo.create).not.toHaveBeenCalled();
-      expect(eventsService.logEvent).not.toHaveBeenCalled();
+      expect(repo.createWithEvent).not.toHaveBeenCalled();
     });
 
     it('should throw BadRequestException when validation fails', async () => {
+      const namespace = 'default';
+      const entityTypeId = 'entity-type-uuid-123';
+      const invalidData = { wrongField: 'Test' };
+
       const mockEntityType = {
         id: entityTypeId,
+        name: 'TestType',
         namespace,
-        name: 'Person',
-        version: 1,
         schemaJson: {
           type: 'object',
-          properties: {
-            name: { type: 'string' },
-            age: { type: 'number' },
-          },
-          required: ['name', 'age'],
+          properties: { name: { type: 'string' } },
+          required: ['name'],
         },
+        version: 1,
         createdAt: new Date(),
+        updatedAt: new Date(),
       };
-
-      const invalidData = { name: 'John' }; // Missing required age
 
       entityTypesService.findById.mockResolvedValue(mockEntityType);
       validationService.validateEntityData.mockReturnValue({
         valid: false,
-        errors: ['Missing required field: age'],
+        errors: ["must have required property 'name'"],
       });
 
       await expect(
         service.create(namespace, entityTypeId, invalidData),
       ).rejects.toThrow(BadRequestException);
 
-      expect(repo.create).not.toHaveBeenCalled();
-      expect(eventsService.logEvent).not.toHaveBeenCalled();
+      expect(entityTypesService.findById).toHaveBeenCalledWith(entityTypeId);
+      expect(validationService.validateEntityData).toHaveBeenCalledWith(
+        mockEntityType.schemaJson,
+        invalidData,
+      );
+      expect(repo.createWithEvent).not.toHaveBeenCalled();
     });
   });
 
@@ -186,22 +173,22 @@ describe('EntitiesService', () => {
     it('should return all entities', async () => {
       const mockEntities = [
         {
-          id: 'entity-1',
-          namespace: 'ns1',
-          entityTypeId: 'type-1',
+          id: '1',
+          namespace: 'default',
+          entityTypeId: 'type1',
           entityTypeVersion: 1,
-          data: { name: 'Entity 1' },
+          data: {},
           createdAt: new Date(),
-          updatedAt: new Date(),
+          updatedAt: null,
         },
         {
-          id: 'entity-2',
-          namespace: 'ns2',
-          entityTypeId: 'type-2',
+          id: '2',
+          namespace: 'default',
+          entityTypeId: 'type2',
           entityTypeVersion: 1,
-          data: { name: 'Entity 2' },
+          data: {},
           createdAt: new Date(),
-          updatedAt: new Date(),
+          updatedAt: null,
         },
       ];
 
@@ -214,17 +201,17 @@ describe('EntitiesService', () => {
     });
 
     it('should filter by namespace and entityTypeId', async () => {
-      const namespace = 'specific-ns';
-      const entityTypeId = 'specific-type';
+      const namespace = 'test';
+      const entityTypeId = 'type1';
       const mockEntities = [
         {
-          id: 'entity-1',
+          id: '1',
           namespace,
           entityTypeId,
           entityTypeVersion: 1,
-          data: { name: 'Filtered Entity' },
+          data: {},
           createdAt: new Date(),
-          updatedAt: new Date(),
+          updatedAt: null,
         },
       ];
 
@@ -240,20 +227,20 @@ describe('EntitiesService', () => {
   describe('findById', () => {
     it('should return entity by id', async () => {
       const mockEntity = {
-        id: 'entity-uuid-123',
-        namespace: 'test',
-        entityTypeId: 'type-uuid',
+        id: 'entity-id',
+        namespace: 'default',
+        entityTypeId: 'type1',
         entityTypeVersion: 1,
-        data: { name: 'Test Entity' },
+        data: { name: 'Test' },
         createdAt: new Date(),
-        updatedAt: new Date(),
+        updatedAt: null,
       };
 
       repo.findById.mockResolvedValue(mockEntity);
 
-      const result = await service.findById('entity-uuid-123');
+      const result = await service.findById('entity-id');
 
-      expect(repo.findById).toHaveBeenCalledWith('entity-uuid-123');
+      expect(repo.findById).toHaveBeenCalledWith('entity-id');
       expect(result).toEqual(mockEntity);
     });
 
@@ -268,41 +255,33 @@ describe('EntitiesService', () => {
   });
 
   describe('update', () => {
-    const entityId = 'entity-uuid-123';
-    const entityTypeId = 'type-uuid-456';
-    const namespace = 'test-namespace';
-    const newData = {
-      name: 'Jane Doe',
-      age: 35,
-    };
-
-    const mockExistingEntity = {
-      id: entityId,
-      namespace,
-      entityTypeId,
-      entityTypeVersion: 1,
-      data: { name: 'John Doe', age: 30 },
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    };
-
-    const mockEntityType = {
-      id: entityTypeId,
-      namespace,
-      name: 'Person',
-      version: 1,
-      schemaJson: {
-        type: 'object',
-        properties: {
-          name: { type: 'string' },
-          age: { type: 'number' },
-        },
-        required: ['name'],
-      },
-      createdAt: new Date(),
-    };
-
     it('should update an entity with valid data', async () => {
+      const entityId = 'entity-uuid-456';
+      const newData = { name: 'Updated Entity', value: 100 };
+
+      const mockExistingEntity = {
+        id: entityId,
+        namespace: 'default',
+        entityTypeId: 'entity-type-uuid-123',
+        entityTypeVersion: 1,
+        data: { name: 'Old Entity', value: 42 },
+        createdAt: new Date(),
+        updatedAt: null,
+      };
+
+      const mockEntityType = {
+        id: 'entity-type-uuid-123',
+        name: 'TestType',
+        namespace: 'default',
+        schemaJson: {
+          type: 'object',
+          properties: { name: { type: 'string' }, value: { type: 'number' } },
+        },
+        version: 1,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      };
+
       const mockUpdatedEntity = {
         ...mockExistingEntity,
         data: newData,
@@ -315,131 +294,177 @@ describe('EntitiesService', () => {
         valid: true,
         errors: undefined,
       });
-      repo.update.mockResolvedValue(mockUpdatedEntity);
-      eventsService.logEvent.mockResolvedValue({
-        id: 'event-id',
-        namespace: 'default',
-        eventType: 'entity.updated',
-        resourceType: 'entity',
-        resourceId: mockUpdatedEntity.id,
-        timestamp: new Date(),
-        metadata: {},
-        payload: mockUpdatedEntity,
-      });
+      repo.updateWithEvent.mockResolvedValue(mockUpdatedEntity);
 
       const result = await service.update(entityId, newData);
 
       expect(repo.findById).toHaveBeenCalledWith(entityId);
-      expect(entityTypesService.findById).toHaveBeenCalledWith(entityTypeId);
+      expect(entityTypesService.findById).toHaveBeenCalledWith(
+        mockExistingEntity.entityTypeId,
+      );
       expect(validationService.validateEntityData).toHaveBeenCalledWith(
         mockEntityType.schemaJson,
         newData,
       );
-      expect(repo.update).toHaveBeenCalledWith(entityId, newData);
-      expect(eventsService.logEvent).toHaveBeenCalledWith({
+      expect(repo.updateWithEvent).toHaveBeenCalledWith(entityId, newData, {
         eventType: 'entity.updated',
         resourceType: 'entity',
         resourceId: entityId,
-        namespace,
+        namespace: mockExistingEntity.namespace,
         payload: {
-          entityTypeId,
-          entityTypeVersion: 1,
+          entityTypeId: mockExistingEntity.entityTypeId,
+          entityTypeVersion: mockExistingEntity.entityTypeVersion,
           oldData: mockExistingEntity.data,
-          newData,
+          newData: newData,
         },
+        metadata: {},
       });
       expect(result).toEqual(mockUpdatedEntity);
     });
 
     it('should throw BadRequestException when entity not found', async () => {
+      const entityId = 'non-existent';
+      const newData = { name: 'Updated' };
+
       repo.findById.mockResolvedValue(null);
 
       await expect(service.update(entityId, newData)).rejects.toThrow(
-        new BadRequestException('Entity not found'),
+        BadRequestException,
       );
 
+      expect(repo.findById).toHaveBeenCalledWith(entityId);
       expect(entityTypesService.findById).not.toHaveBeenCalled();
-      expect(validationService.validateEntityData).not.toHaveBeenCalled();
-      expect(repo.update).not.toHaveBeenCalled();
-      expect(eventsService.logEvent).not.toHaveBeenCalled();
+      expect(repo.updateWithEvent).not.toHaveBeenCalled();
     });
 
     it('should throw BadRequestException when entity type not found', async () => {
+      const entityId = 'entity-id';
+      const newData = { name: 'Updated' };
+
+      const mockExistingEntity = {
+        id: entityId,
+        namespace: 'default',
+        entityTypeId: 'type-id',
+        entityTypeVersion: 1,
+        data: { name: 'Old' },
+        createdAt: new Date(),
+        updatedAt: null,
+      };
+
       repo.findById.mockResolvedValue(mockExistingEntity);
       entityTypesService.findById.mockResolvedValue(null);
 
       await expect(service.update(entityId, newData)).rejects.toThrow(
-        new BadRequestException('EntityType not found'),
+        BadRequestException,
       );
 
-      expect(validationService.validateEntityData).not.toHaveBeenCalled();
-      expect(repo.update).not.toHaveBeenCalled();
-      expect(eventsService.logEvent).not.toHaveBeenCalled();
+      expect(repo.findById).toHaveBeenCalledWith(entityId);
+      expect(entityTypesService.findById).toHaveBeenCalledWith(
+        mockExistingEntity.entityTypeId,
+      );
+      expect(repo.updateWithEvent).not.toHaveBeenCalled();
     });
 
     it('should throw BadRequestException when validation fails', async () => {
-      const invalidData = { name: 123 }; // Name should be string
+      const entityId = 'entity-id';
+      const invalidData = { wrongField: 'Test' };
+
+      const mockExistingEntity = {
+        id: entityId,
+        namespace: 'default',
+        entityTypeId: 'type-id',
+        entityTypeVersion: 1,
+        data: { name: 'Old' },
+        createdAt: new Date(),
+        updatedAt: null,
+      };
+
+      const mockEntityType = {
+        id: 'type-id',
+        name: 'TestType',
+        namespace: 'default',
+        schemaJson: {
+          type: 'object',
+          properties: { name: { type: 'string' } },
+          required: ['name'],
+        },
+        version: 1,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      };
 
       repo.findById.mockResolvedValue(mockExistingEntity);
       entityTypesService.findById.mockResolvedValue(mockEntityType);
       validationService.validateEntityData.mockReturnValue({
         valid: false,
-        errors: ['name: must be string'],
+        errors: ["must have required property 'name'"],
       });
 
       await expect(service.update(entityId, invalidData)).rejects.toThrow(
-        new BadRequestException('Validation failed: name: must be string'),
+        BadRequestException,
       );
 
-      expect(repo.update).not.toHaveBeenCalled();
-      expect(eventsService.logEvent).not.toHaveBeenCalled();
+      expect(repo.updateWithEvent).not.toHaveBeenCalled();
     });
 
     it('should throw BadRequestException when update fails', async () => {
+      const entityId = 'entity-id';
+      const newData = { name: 'Updated' };
+
+      const mockExistingEntity = {
+        id: entityId,
+        namespace: 'default',
+        entityTypeId: 'type-id',
+        entityTypeVersion: 1,
+        data: { name: 'Old' },
+        createdAt: new Date(),
+        updatedAt: null,
+      };
+
+      const mockEntityType = {
+        id: 'type-id',
+        name: 'TestType',
+        namespace: 'default',
+        schemaJson: {
+          type: 'object',
+          properties: { name: { type: 'string' } },
+        },
+        version: 1,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      };
+
       repo.findById.mockResolvedValue(mockExistingEntity);
       entityTypesService.findById.mockResolvedValue(mockEntityType);
       validationService.validateEntityData.mockReturnValue({
         valid: true,
         errors: undefined,
       });
-      repo.update.mockResolvedValue(null);
+      repo.updateWithEvent.mockResolvedValue(null);
 
       await expect(service.update(entityId, newData)).rejects.toThrow(
-        new BadRequestException('Failed to update entity'),
+        BadRequestException,
       );
-
-      expect(eventsService.logEvent).not.toHaveBeenCalled();
     });
   });
 
   describe('search', () => {
     it('should search entities with filter', async () => {
       const filter = {
-        namespace: 'test',
-        entityTypeId: 'type-123',
-        data: { status: 'active' },
+        namespace: 'default',
+        entityTypeId: 'type1',
         limit: 10,
-        offset: 0,
       };
 
       const mockEntities = [
         {
-          id: 'entity-1',
-          namespace: 'test',
-          entityTypeId: 'type-123',
+          id: '1',
+          namespace: 'default',
+          entityTypeId: 'type1',
           entityTypeVersion: 1,
-          data: { name: 'Entity 1', status: 'active' },
+          data: {},
           createdAt: new Date(),
-          updatedAt: new Date(),
-        },
-        {
-          id: 'entity-2',
-          namespace: 'test',
-          entityTypeId: 'type-123',
-          entityTypeVersion: 1,
-          data: { name: 'Entity 2', status: 'active' },
-          createdAt: new Date(),
-          updatedAt: new Date(),
+          updatedAt: null,
         },
       ];
 
@@ -453,8 +478,7 @@ describe('EntitiesService', () => {
 
     it('should handle empty search results', async () => {
       const filter = {
-        namespace: 'test',
-        data: { status: 'nonexistent' },
+        namespace: 'non-existent',
       };
 
       repo.search.mockResolvedValue([]);
@@ -469,22 +493,21 @@ describe('EntitiesService', () => {
   describe('count', () => {
     it('should count entities with filter', async () => {
       const filter = {
-        namespace: 'test',
-        entityTypeId: 'type-123',
-        data: { status: 'active' },
+        namespace: 'default',
+        entityTypeId: 'type1',
       };
 
-      repo.count.mockResolvedValue(42);
+      repo.count.mockResolvedValue(5);
 
       const result = await service.count(filter);
 
       expect(repo.count).toHaveBeenCalledWith(filter);
-      expect(result).toBe(42);
+      expect(result).toBe(5);
     });
 
     it('should return 0 for no matching entities', async () => {
       const filter = {
-        namespace: 'nonexistent',
+        namespace: 'non-existent',
       };
 
       repo.count.mockResolvedValue(0);

@@ -1,6 +1,7 @@
 // src/modules/events/events.service.ts
 import { Injectable } from '@nestjs/common';
 import { EventsRepo } from './events.repo';
+import { DrizzleTransaction } from '../../db/drizzle.service';
 
 export interface EventData {
   eventType: string;
@@ -15,15 +16,18 @@ export interface EventData {
 export class EventsService {
   constructor(private eventsRepo: EventsRepo) {}
 
-  async logEvent(eventData: EventData) {
-    return await this.eventsRepo.create({
-      eventType: eventData.eventType,
-      resourceType: eventData.resourceType,
-      resourceId: eventData.resourceId,
-      namespace: eventData.namespace,
-      payload: eventData.payload,
-      metadata: eventData.metadata || {},
-    });
+  async logEvent(eventData: EventData, tx?: DrizzleTransaction) {
+    return await this.eventsRepo.create(
+      {
+        eventType: eventData.eventType,
+        resourceType: eventData.resourceType,
+        resourceId: eventData.resourceId,
+        namespace: eventData.namespace,
+        payload: eventData.payload,
+        metadata: eventData.metadata || {},
+      },
+      tx,
+    );
   }
 
   async getEvents(options?: {

@@ -1,6 +1,6 @@
 // src/modules/relations/relations.repo.ts
 import { Injectable } from '@nestjs/common';
-import { DrizzleService } from '../../db/drizzle.service';
+import { DrizzleService, DrizzleTransaction } from '../../db/drizzle.service';
 import { relation, InsertRelation, Relation } from '../../db/schema';
 import { eq, and, SQL } from 'drizzle-orm';
 
@@ -8,12 +8,16 @@ import { eq, and, SQL } from 'drizzle-orm';
 export class RelationsRepo {
   constructor(private drizzle: DrizzleService) {}
 
-  async create(data: InsertRelation): Promise<Relation> {
-    const [newRelation] = await this.drizzle.db
-      .insert(relation)
-      .values(data)
-      .returning();
+  private getDb(tx?: DrizzleTransaction) {
+    return (tx ?? this.drizzle.db) as typeof this.drizzle.db;
+  }
 
+  async create(
+    data: InsertRelation,
+    tx?: DrizzleTransaction,
+  ): Promise<Relation> {
+    const db = this.getDb(tx);
+    const [newRelation] = await db.insert(relation).values(data).returning();
     return newRelation;
   }
 
