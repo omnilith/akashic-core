@@ -154,4 +154,26 @@ export class EntitiesRepo {
       return updatedEntity;
     });
   }
+
+  async delete(id: string, tx?: DrizzleTransaction): Promise<Entity | null> {
+    const db = this.getDb(tx);
+    const [deleted] = await db
+      .delete(entity)
+      .where(eq(entity.id, id))
+      .returning();
+    return deleted || null;
+  }
+
+  async deleteWithEvent(
+    id: string,
+    eventData: Omit<InsertEventLog, 'id' | 'timestamp'>,
+  ): Promise<Entity | null> {
+    return await this.drizzle.transaction(async (tx) => {
+      const deletedEntity = await this.delete(id, tx);
+      if (deletedEntity) {
+        await this.eventsRepo.create(eventData, tx);
+      }
+      return deletedEntity;
+    });
+  }
 }

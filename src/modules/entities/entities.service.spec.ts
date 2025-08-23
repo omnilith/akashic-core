@@ -25,6 +25,7 @@ describe('EntitiesService', () => {
             update: jest.fn(),
             updateWithEvent: jest.fn(),
             delete: jest.fn(),
+            deleteWithEvent: jest.fn(),
             search: jest.fn(),
             count: jest.fn(),
           },
@@ -516,6 +517,98 @@ describe('EntitiesService', () => {
 
       expect(repo.count).toHaveBeenCalledWith(filter);
       expect(result).toBe(0);
+    });
+  });
+
+  describe('delete', () => {
+    it('should delete an entity successfully', async () => {
+      const entityId = 'entity-uuid-456';
+
+      const mockExistingEntity = {
+        id: entityId,
+        namespace: 'default',
+        entityTypeId: 'entity-type-uuid-123',
+        entityTypeVersion: 1,
+        data: { name: 'Entity to Delete', value: 42 },
+        createdAt: new Date(),
+        updatedAt: null,
+      };
+
+      const mockDeletedEntity = {
+        ...mockExistingEntity,
+      };
+
+      repo.findById.mockResolvedValue(mockExistingEntity);
+      repo.deleteWithEvent.mockResolvedValue(mockDeletedEntity);
+
+      const result = await service.delete(entityId);
+
+      expect(repo.findById).toHaveBeenCalledWith(entityId);
+      expect(repo.deleteWithEvent).toHaveBeenCalledWith(entityId, {
+        eventType: 'entity.deleted',
+        resourceType: 'entity',
+        resourceId: entityId,
+        namespace: mockExistingEntity.namespace,
+        payload: {
+          entityTypeId: mockExistingEntity.entityTypeId,
+          entityTypeVersion: mockExistingEntity.entityTypeVersion,
+          data: mockExistingEntity.data,
+        },
+        metadata: {},
+      });
+      expect(result).toEqual({
+        id: entityId,
+        deleted: true,
+        entityTypeId: mockExistingEntity.entityTypeId,
+      });
+    });
+
+    it('should throw BadRequestException when entity not found', async () => {
+      const entityId = 'non-existent';
+
+      repo.findById.mockResolvedValue(null);
+
+      await expect(service.delete(entityId)).rejects.toThrow(
+        BadRequestException,
+      );
+
+      expect(repo.findById).toHaveBeenCalledWith(entityId);
+      expect(repo.deleteWithEvent).not.toHaveBeenCalled();
+    });
+
+    it('should throw BadRequestException when delete fails', async () => {
+      const entityId = 'entity-id';
+
+      const mockExistingEntity = {
+        id: entityId,
+        namespace: 'default',
+        entityTypeId: 'type-id',
+        entityTypeVersion: 1,
+        data: { name: 'Entity' },
+        createdAt: new Date(),
+        updatedAt: null,
+      };
+
+      repo.findById.mockResolvedValue(mockExistingEntity);
+      repo.deleteWithEvent.mockResolvedValue(null);
+
+      await expect(service.delete(entityId)).rejects.toThrow(
+        BadRequestException,
+      );
+
+      expect(repo.findById).toHaveBeenCalledWith(entityId);
+      expect(repo.deleteWithEvent).toHaveBeenCalledWith(entityId, {
+        eventType: 'entity.deleted',
+        resourceType: 'entity',
+        resourceId: entityId,
+        namespace: mockExistingEntity.namespace,
+        payload: {
+          entityTypeId: mockExistingEntity.entityTypeId,
+          entityTypeVersion: mockExistingEntity.entityTypeVersion,
+          data: mockExistingEntity.data,
+        },
+        metadata: {},
+      });
     });
   });
 });

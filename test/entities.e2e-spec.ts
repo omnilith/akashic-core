@@ -41,9 +41,32 @@ describe('Entities (E2E)', () => {
           }
         }
       `;
-      
-      // Note: Since there's no deleteEntity mutation, we can't clean up entities
-      // This may cause the entity type deletion to fail
+
+      const entitiesResult = await testHelper.graphqlQuery(entitiesQuery, {
+        entityTypeId,
+      });
+
+      // Delete each entity
+      const deleteMutation = `
+        mutation DeleteEntity($id: String!) {
+          deleteEntity(id: $id) {
+            id
+            deleted
+          }
+        }
+      `;
+
+      for (const entity of entitiesResult.entities) {
+        try {
+          await testHelper.graphqlMutation(deleteMutation, {
+            id: entity.id,
+          });
+        } catch (error) {
+          // Ignore individual deletion errors
+        }
+      }
+
+      // Now delete the entity type
       try {
         await testHelper.graphqlMutation(
           `mutation DeleteEntityType($id: ID!) {
@@ -52,14 +75,14 @@ describe('Entities (E2E)', () => {
               deleted
             }
           }`,
-          { id: entityTypeId }
+          { id: entityTypeId },
         );
       } catch (error) {
-        // Ignore deletion errors - entities may prevent type deletion
-        console.log('Could not delete entity type - entities may exist');
+        // Ignore deletion errors
+        console.log('Could not delete entity type');
       }
     }
-    
+
     await testHelper.teardownTestApp();
   });
 
@@ -87,7 +110,7 @@ describe('Entities (E2E)', () => {
       expect(result.createEntity).toBeDefined();
       expect(result.createEntity.entityTypeId).toBe(entityTypeId);
       expect(result.createEntity.data).toEqual(testEntity.data);
-      
+
       createdEntityId = result.createEntity.id;
     });
 
@@ -110,7 +133,7 @@ describe('Entities (E2E)', () => {
       };
 
       await expect(
-        testHelper.graphqlMutation(mutation, { input: invalidData })
+        testHelper.graphqlMutation(mutation, { input: invalidData }),
       ).rejects.toThrow();
     });
 
@@ -156,7 +179,7 @@ describe('Entities (E2E)', () => {
       `;
 
       const result = await testHelper.graphqlQuery(query);
-      
+
       expect(result.entities).toBeDefined();
       expect(Array.isArray(result.entities)).toBe(true);
       expect(result.entities.length).toBeGreaterThan(0);
@@ -176,7 +199,9 @@ describe('Entities (E2E)', () => {
 
       const result = await testHelper.graphqlQuery(query);
 
-      const foundEntity = result.entities.find((e: any) => e.id === createdEntityId);
+      const foundEntity = result.entities.find(
+        (e: any) => e.id === createdEntityId,
+      );
       expect(foundEntity).toBeDefined();
       expect(foundEntity.id).toBe(createdEntityId);
       expect(foundEntity.entityTypeId).toBe(entityTypeId);
@@ -198,7 +223,7 @@ describe('Entities (E2E)', () => {
 
       expect(result.entities).toBeDefined();
       expect(Array.isArray(result.entities)).toBe(true);
-      
+
       result.entities.forEach((entity: any) => {
         expect(entity.entityTypeId).toBe(entityTypeId);
       });
@@ -225,7 +250,7 @@ describe('Entities (E2E)', () => {
 
       expect(result.searchEntities).toBeDefined();
       expect(Array.isArray(result.searchEntities)).toBe(true);
-      
+
       result.searchEntities.forEach((entity: any) => {
         expect(entity.data.name).toBe('John Doe');
       });
@@ -293,43 +318,88 @@ describe('Entities (E2E)', () => {
         testHelper.graphqlMutation(mutation, {
           id: createdEntityId,
           data: JSON.stringify(invalidData),
-        })
+        }),
       ).rejects.toThrow();
     });
   });
 
-  describe.skip('Delete Entity', () => {
-    // Note: Delete entity mutation not implemented in current API
+  describe('Delete Entity', () => {
     it('should delete entity', async () => {
+      // First, create a new entity to delete
+      const createMutation = `
+        mutation CreateEntity($input: CreateEntityInput!) {
+          createEntity(input: $input) {
+            id
+            entityTypeId
+          }
+        }
+      `;
+
+      const createResult = await testHelper.graphqlMutation(createMutation, {
+        input: {
+          namespace: 'test-e2e',
+          entityTypeId,
+          data: JSON.stringify({
+            name: 'Entity to Delete',
+            age: 99,
+            email: 'delete@example.com',
+          }),
+        },
+      });
+
+      const entityToDeleteId = createResult.createEntity.id;
+
+      // Now delete the entity
       const mutation = `
-        mutation DeleteEntity($id: ID!) {
+        mutation DeleteEntity($id: String!) {
           deleteEntity(id: $id) {
-            success
+            id
+            deleted
+            entityTypeId
           }
         }
       `;
 
       const result = await testHelper.graphqlMutation(mutation, {
-        id: createdEntityId,
+        id: entityToDeleteId,
       });
 
       expect(result.deleteEntity).toBeDefined();
-      expect(result.deleteEntity.success).toBe(true);
+      expect(result.deleteEntity.id).toBe(entityToDeleteId);
+      expect(result.deleteEntity.deleted).toBe(true);
+      expect(result.deleteEntity.entityTypeId).toBe(entityTypeId);
 
-      // Verify deletion
+      // Verify deletion by trying to query the entity
       const query = `
-        query GetEntity($id: ID!) {
-          entity(id: $id) {
+        query GetEntities {
+          entities {
             id
           }
         }
       `;
 
-      const queryResult = await testHelper.graphqlQuery(query, {
-        id: createdEntityId,
-      });
+      const queryResult = await testHelper.graphqlQuery(query);
+      const foundEntity = queryResult.entities.find(
+        (e: any) => e.id === entityToDeleteId,
+      );
+      expect(foundEntity).toBeUndefined();
+    });
 
-      expect(queryResult.entity).toBeNull();
+    it('should return error when deleting non-existent entity', async () => {
+      const mutation = `
+        mutation DeleteEntity($id: String!) {
+          deleteEntity(id: $id) {
+            id
+            deleted
+          }
+        }
+      `;
+
+      await expect(
+        testHelper.graphqlMutation(mutation, {
+          id: 'non-existent-entity-id',
+        }),
+      ).rejects.toThrow();
     });
 
     it.skip('should bulk delete entities by filter', async () => {
@@ -342,7 +412,7 @@ describe('Entities (E2E)', () => {
         }
       `;
 
-      const entityIds = [];
+      const entityIds: string[] = [];
       for (let i = 0; i < 3; i++) {
         const result = await testHelper.graphqlMutation(createMutation, {
           input: {
