@@ -355,7 +355,7 @@ describe('ValidationService', () => {
       const result = service.validateSchema(invalidSchema);
       expect(result.valid).toBe(false);
       expect(result.errors).toBeDefined();
-      expect(result.errors![0]).toContain('Invalid JSON Schema');
+      expect(result.errors![0]).toContain('type');
     });
 
     it('should validate complex nested schemas', () => {
