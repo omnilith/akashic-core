@@ -5,7 +5,6 @@ import { useMutation } from '@apollo/client/react';
 import { useCallback } from 'react';
 import { 
   LIST_ENTITIES,
-  GET_ENTITY,
   GET_ENTITIES_BY_TYPE
 } from '../queries/entity.queries';
 import {
@@ -44,8 +43,12 @@ export interface UseEntitiesOptions {
 export function useEntities(options: UseEntitiesOptions = {}) {
   const { filter, limit, offset, skip = false } = options;
   
+  // Convert filter to namespace and entityTypeId for the simple entities query
+  const namespace = filter?.namespace;
+  const entityTypeId = filter?.entityTypeId;
+  
   const { data, loading, error, refetch, fetchMore } = useQuery<{ entities: Entity[] }>(LIST_ENTITIES, {
-    variables: { filter, limit, offset },
+    variables: { namespace, entityTypeId },
     skip,
     notifyOnNetworkStatusChange: true,
   });
@@ -76,21 +79,7 @@ export function useEntities(options: UseEntitiesOptions = {}) {
   };
 }
 
-export function useEntity(id: string, options: Omit<UseEntitiesOptions, 'filter' | 'limit' | 'offset'> = {}) {
-  const { skip = false } = options;
-  
-  const { data, loading, error, refetch } = useQuery<{ entity: Entity }>(GET_ENTITY, {
-    variables: { id },
-    skip: !id || skip,
-  });
-
-  return {
-    entity: data?.entity,
-    loading,
-    error,
-    refetch,
-  };
-}
+// useEntity removed - use useEnrichedEntity from useEnrichedEntities.ts instead
 
 export function useEntitiesByType(entityTypeId: string, options: UseEntitiesOptions = {}) {
   const { limit, offset, skip = false } = options;

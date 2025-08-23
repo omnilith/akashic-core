@@ -4,7 +4,7 @@ import { setContext } from '@apollo/client/link/context';
 import { onError } from '@apollo/client/link/error';
 
 const httpLink = createHttpLink({
-  uri: process.env.NEXT_PUBLIC_GRAPHQL_ENDPOINT || 'http://localhost:3000/graphql',
+  uri: process.env.NEXT_PUBLIC_GRAPHQL_ENDPOINT || 'http://localhost:4000/graphql',
 });
 
 const authLink = setContext((_, { headers }) => {
@@ -84,7 +84,7 @@ export const apolloClient = new ApolloClient({
           },
         },
       },
-      Entity: {
+      EntityDto: {
         keyFields: ['id'],
       },
       EntityTypeDto: {

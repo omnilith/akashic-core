@@ -1,30 +1,23 @@
 import { gql } from '@apollo/client';
 import { 
-  ENTITY_WITH_TYPE,
-  ENTITY_FULL
+  ENTITY_WITH_TYPE
 } from '../fragments';
 
 export const LIST_ENTITIES = gql`
-  query ListEntities($filter: EntityFilter, $limit: Int, $offset: Int) {
-    entities(filter: $filter, limit: $limit, offset: $offset) {
+  query ListEntities($namespace: String, $entityTypeId: String) {
+    entities(namespace: $namespace, entityTypeId: $entityTypeId) {
       ...EntityWithType
     }
   }
   ${ENTITY_WITH_TYPE}
 `;
 
-export const GET_ENTITY = gql`
-  query GetEntity($id: ID!) {
-    entity(id: $id) {
-      ...EntityFull
-    }
-  }
-  ${ENTITY_FULL}
-`;
+// GET_ENTITY removed - backend doesn't have single entity query
+// Use entities query and filter client-side instead
 
 export const SEARCH_ENTITIES = gql`
-  query SearchEntities($filter: EntityFilter, $query: JSON, $limit: Int, $offset: Int) {
-    entities(filter: $filter, query: $query, limit: $limit, offset: $offset) {
+  query SearchEntities($filter: EntityFilterInput!) {
+    searchEntities(filter: $filter) {
       ...EntityWithType
     }
   }
@@ -32,8 +25,8 @@ export const SEARCH_ENTITIES = gql`
 `;
 
 export const GET_ENTITIES_BY_TYPE = gql`
-  query GetEntitiesByType($entityTypeId: ID!, $namespace: String, $limit: Int, $offset: Int) {
-    entities(filter: { entityTypeId: $entityTypeId, namespace: $namespace }, limit: $limit, offset: $offset) {
+  query GetEntitiesByType($entityTypeId: String!, $namespace: String) {
+    entities(entityTypeId: $entityTypeId, namespace: $namespace) {
       ...EntityWithType
     }
   }

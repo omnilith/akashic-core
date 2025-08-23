@@ -97,7 +97,7 @@ function makeClient() {
             },
           },
         },
-        Entity: {
+        EntityDto: {
           keyFields: ["id"],
         },
         EntityTypeDto: {
