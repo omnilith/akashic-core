@@ -11,8 +11,8 @@ export const CREATE_ENTITY_TYPE = gql`
 `;
 
 export const UPDATE_ENTITY_TYPE = gql`
-  mutation UpdateEntityType($id: ID!, $input: UpdateEntityTypeInput!) {
-    updateEntityType(id: $id, input: $input) {
+  mutation UpdateEntityType($input: UpdateEntityTypeInput!) {
+    updateEntityType(input: $input) {
       ...EntityTypeFull
     }
   }
@@ -23,7 +23,7 @@ export const DELETE_ENTITY_TYPE = gql`
   mutation DeleteEntityType($id: ID!) {
     deleteEntityType(id: $id) {
       id
-      success
+      deleted
     }
   }
 `;
