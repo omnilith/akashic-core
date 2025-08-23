@@ -36,11 +36,38 @@ export class RelationTypesService {
       throw new BadRequestException('To EntityType not found');
     }
 
+    // Check for duplicate name in same namespace
+    const existing = await this.repo.findByNameAndNamespace(name, namespace);
+    if (existing) {
+      throw new ConflictException(
+        `RelationType with name '${name}' already exists in namespace '${namespace}'`,
+      );
+    }
+
+    // Validate namespace compatibility between entity types
+    if (
+      fromEntityType.namespace !== toEntityType.namespace &&
+      fromEntityType.namespace !== 'global' &&
+      toEntityType.namespace !== 'global'
+    ) {
+      throw new BadRequestException(
+        `Cannot create relation between entities in different namespaces: ` +
+          `${fromEntityType.namespace} and ${toEntityType.namespace}`,
+      );
+    }
+
     // Validate cardinality format
     const validCardinalities = ['1..1', '1..n', 'n..1', 'n..n'];
     if (!validCardinalities.includes(cardinality)) {
       throw new BadRequestException(
         `Invalid cardinality. Must be one of: ${validCardinalities.join(', ')}`,
+      );
+    }
+
+    // Validate self-referential relations
+    if (fromEntityTypeId === toEntityTypeId && cardinality === '1..1') {
+      throw new BadRequestException(
+        'Self-referential relations cannot have 1..1 cardinality',
       );
     }
 
@@ -80,6 +107,16 @@ export class RelationTypesService {
     }> = {};
 
     if (name !== undefined) {
+      // Check for duplicate name in same namespace
+      const duplicate = await this.repo.findByNameAndNamespace(
+        name,
+        existing.namespace,
+      );
+      if (duplicate && duplicate.id !== id) {
+        throw new ConflictException(
+          `RelationType with name '${name}' already exists in namespace '${existing.namespace}'`,
+        );
+      }
       updates.name = name;
     }
 

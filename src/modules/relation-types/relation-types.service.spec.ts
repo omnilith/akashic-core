@@ -92,6 +92,7 @@ describe('RelationTypesService', () => {
       entityTypesService.findById
         .mockResolvedValueOnce(mockFromEntityType)
         .mockResolvedValueOnce(mockToEntityType);
+      repo.findByNameAndNamespace.mockResolvedValue(null);
       repo.create.mockResolvedValue(mockRelationType);
       eventsService.logEvent.mockResolvedValue({
         id: 'event-id',
@@ -220,6 +221,7 @@ describe('RelationTypesService', () => {
         entityTypesService.findById
           .mockResolvedValueOnce(mockFromEntityType)
           .mockResolvedValueOnce(mockToEntityType);
+        repo.findByNameAndNamespace.mockResolvedValue(null);
         repo.create.mockResolvedValue(mockRelationType);
         eventsService.logEvent.mockResolvedValue({
           id: 'event-id',
@@ -241,6 +243,179 @@ describe('RelationTypesService', () => {
         );
 
         expect(result.cardinality).toEqual(validCardinality);
+      }
+    });
+
+    it('should throw ConflictException when duplicate name exists in namespace', async () => {
+      const existingRelationType = {
+        id: 'existing-id',
+        namespace,
+        name,
+        fromEntityTypeId: 'other-from',
+        toEntityTypeId: 'other-to',
+        cardinality: '1..n',
+        version: 1,
+        createdAt: new Date(),
+      };
+
+      entityTypesService.findById
+        .mockResolvedValueOnce(mockFromEntityType)
+        .mockResolvedValueOnce(mockToEntityType);
+      repo.findByNameAndNamespace.mockResolvedValue(existingRelationType);
+
+      await expect(
+        service.create(
+          namespace,
+          name,
+          fromEntityTypeId,
+          toEntityTypeId,
+          cardinality,
+        ),
+      ).rejects.toThrow(ConflictException);
+
+      expect(repo.findByNameAndNamespace).toHaveBeenCalledWith(name, namespace);
+      expect(repo.create).not.toHaveBeenCalled();
+    });
+
+    it('should throw BadRequestException for cross-namespace relations', async () => {
+      const fromEntityInDifferentNamespace = {
+        ...mockFromEntityType,
+        namespace: 'namespace1',
+      };
+      const toEntityInDifferentNamespace = {
+        ...mockToEntityType,
+        namespace: 'namespace2',
+      };
+
+      entityTypesService.findById
+        .mockResolvedValueOnce(fromEntityInDifferentNamespace)
+        .mockResolvedValueOnce(toEntityInDifferentNamespace);
+      repo.findByNameAndNamespace.mockResolvedValue(null);
+
+      await expect(
+        service.create(
+          namespace,
+          name,
+          fromEntityTypeId,
+          toEntityTypeId,
+          cardinality,
+        ),
+      ).rejects.toThrow(BadRequestException);
+
+      expect(repo.create).not.toHaveBeenCalled();
+    });
+
+    it('should allow relations when one entity type is in global namespace', async () => {
+      const globalEntityType = {
+        ...mockFromEntityType,
+        namespace: 'global',
+      };
+      const localEntityType = {
+        ...mockToEntityType,
+        namespace: 'local',
+      };
+      const mockGlobalRelationType = {
+        id: 'relation-type-id',
+        namespace,
+        name,
+        fromEntityTypeId,
+        toEntityTypeId,
+        cardinality,
+        version: 1,
+        createdAt: new Date(),
+      };
+
+      entityTypesService.findById
+        .mockResolvedValueOnce(globalEntityType)
+        .mockResolvedValueOnce(localEntityType);
+      repo.findByNameAndNamespace.mockResolvedValue(null);
+      repo.create.mockResolvedValue(mockGlobalRelationType);
+      eventsService.logEvent.mockResolvedValue({
+        id: 'event-id',
+        namespace: 'default',
+        eventType: 'relation-type.created',
+        resourceType: 'relation-type',
+        resourceId: 'relation-type-id',
+        timestamp: new Date(),
+        metadata: {},
+        payload: {},
+      });
+
+      const result = await service.create(
+        namespace,
+        name,
+        fromEntityTypeId,
+        toEntityTypeId,
+        cardinality,
+      );
+
+      expect(result).toEqual(mockGlobalRelationType);
+      expect(repo.create).toHaveBeenCalled();
+    });
+
+    it('should throw BadRequestException for self-referential 1..1 relations', async () => {
+      const sameEntityTypeId = 'same-entity-type';
+
+      entityTypesService.findById
+        .mockResolvedValueOnce(mockFromEntityType)
+        .mockResolvedValueOnce(mockFromEntityType); // Same entity type
+      repo.findByNameAndNamespace.mockResolvedValue(null);
+
+      await expect(
+        service.create(
+          namespace,
+          name,
+          sameEntityTypeId,
+          sameEntityTypeId,
+          '1..1',
+        ),
+      ).rejects.toThrow(BadRequestException);
+
+      expect(repo.create).not.toHaveBeenCalled();
+    });
+
+    it('should allow self-referential relations with other cardinalities', async () => {
+      const sameEntityTypeId = 'same-entity-type';
+      const validSelfRefCardinalities = ['1..n', 'n..1', 'n..n'];
+
+      for (const selfRefCardinality of validSelfRefCardinalities) {
+        const mockSelfRefRelationType = {
+          id: 'relation-type-id',
+          namespace,
+          name,
+          fromEntityTypeId: sameEntityTypeId,
+          toEntityTypeId: sameEntityTypeId,
+          cardinality: selfRefCardinality,
+          version: 1,
+          createdAt: new Date(),
+        };
+
+        entityTypesService.findById
+          .mockResolvedValueOnce(mockFromEntityType)
+          .mockResolvedValueOnce(mockFromEntityType);
+        repo.findByNameAndNamespace.mockResolvedValue(null);
+        repo.create.mockResolvedValue(mockSelfRefRelationType);
+        eventsService.logEvent.mockResolvedValue({
+          id: 'event-id',
+          namespace: 'default',
+          eventType: 'relation-type.created',
+          resourceType: 'relation-type',
+          resourceId: 'relation-type-id',
+          timestamp: new Date(),
+          metadata: {},
+          payload: {},
+        });
+
+        const result = await service.create(
+          namespace,
+          name,
+          sameEntityTypeId,
+          sameEntityTypeId,
+          selfRefCardinality,
+        );
+
+        expect(result.cardinality).toEqual(selfRefCardinality);
+        expect(repo.create).toHaveBeenCalled();
       }
     });
   });
@@ -353,6 +528,7 @@ describe('RelationTypesService', () => {
       };
 
       repo.findById.mockResolvedValue(mockRelationType);
+      repo.findByNameAndNamespace.mockResolvedValue(null);
       repo.update.mockResolvedValue(updatedRelationType);
       eventsService.logEvent.mockResolvedValue({
         id: 'event-id',
@@ -487,8 +663,66 @@ describe('RelationTypesService', () => {
       expect(eventsService.logEvent).not.toHaveBeenCalled();
     });
 
+    it('should throw ConflictException when updating to duplicate name', async () => {
+      const newName = 'existingName';
+      const existingRelationType = {
+        id: 'other-id',
+        namespace: mockRelationType.namespace,
+        name: newName,
+        fromEntityTypeId: 'other-from',
+        toEntityTypeId: 'other-to',
+        cardinality: '1..n',
+        version: 1,
+        createdAt: new Date(),
+      };
+
+      repo.findById.mockResolvedValue(mockRelationType);
+      repo.findByNameAndNamespace.mockResolvedValue(existingRelationType);
+
+      await expect(
+        service.update(mockRelationType.id, newName, undefined),
+      ).rejects.toThrow(ConflictException);
+
+      expect(repo.findByNameAndNamespace).toHaveBeenCalledWith(
+        newName,
+        mockRelationType.namespace,
+      );
+      expect(repo.update).not.toHaveBeenCalled();
+    });
+
+    it('should allow updating to same name (no conflict with self)', async () => {
+      const sameName = mockRelationType.name;
+      const sameRelationType = {
+        ...mockRelationType,
+      };
+
+      repo.findById.mockResolvedValue(mockRelationType);
+      repo.findByNameAndNamespace.mockResolvedValue(sameRelationType);
+      repo.update.mockResolvedValue(mockRelationType);
+      eventsService.logEvent.mockResolvedValue({
+        id: 'event-id',
+        namespace: 'test',
+        eventType: 'relationType.updated',
+        resourceType: 'relationType',
+        resourceId: mockRelationType.id,
+        timestamp: new Date(),
+        metadata: {},
+        payload: {},
+      });
+
+      const result = await service.update(
+        mockRelationType.id,
+        sameName,
+        undefined,
+      );
+
+      expect(result).toEqual(mockRelationType);
+      expect(repo.update).toHaveBeenCalled();
+    });
+
     it('should throw error when update fails', async () => {
       repo.findById.mockResolvedValue(mockRelationType);
+      repo.findByNameAndNamespace.mockResolvedValue(null);
       repo.update.mockResolvedValue(null);
 
       await expect(
