@@ -118,4 +118,36 @@ export class EntitiesService {
 
     return updatedEntity;
   }
+
+  async delete(id: string) {
+    // 1. Find the existing entity (outside transaction)
+    const existingEntity = await this.entitiesRepo.findById(id);
+    if (!existingEntity) {
+      throw new BadRequestException('Entity not found');
+    }
+
+    // 2. Delete entity with event logging in transaction
+    const deletedEntity = await this.entitiesRepo.deleteWithEvent(id, {
+      eventType: 'entity.deleted',
+      resourceType: 'entity',
+      resourceId: id,
+      namespace: existingEntity.namespace,
+      payload: {
+        entityTypeId: existingEntity.entityTypeId,
+        entityTypeVersion: existingEntity.entityTypeVersion,
+        data: existingEntity.data,
+      },
+      metadata: {},
+    });
+
+    if (!deletedEntity) {
+      throw new BadRequestException('Failed to delete entity');
+    }
+
+    return {
+      id: deletedEntity.id,
+      deleted: true,
+      entityTypeId: deletedEntity.entityTypeId!,
+    };
+  }
 }

@@ -1,5 +1,5 @@
 import { TestHelper, generateTestId } from './helpers/test-helpers';
-import { testEntityType, testEntity, testRelationType } from './fixtures/test-data';
+import { testEntityType, testRelationType } from './fixtures/test-data';
 
 describe('Relations (E2E)', () => {
   let testHelper: TestHelper;
@@ -49,7 +49,7 @@ describe('Relations (E2E)', () => {
           fromEntityTypeId: entityTypeId,
           toEntityTypeId: entityTypeId,
         },
-      }
+      },
     );
     relationTypeId = relationTypeResult.createRelationType.id;
 
@@ -88,7 +88,7 @@ describe('Relations (E2E)', () => {
             success
           }
         }`,
-        { id: relationTypeId }
+        { id: relationTypeId },
       );
     }
 
@@ -99,10 +99,10 @@ describe('Relations (E2E)', () => {
             success
           }
         }`,
-        { id: entityTypeId }
+        { id: entityTypeId },
       );
     }
-    
+
     await testHelper.teardownTestApp();
   });
 
@@ -140,7 +140,7 @@ describe('Relations (E2E)', () => {
         since: '2024-01-01',
         strength: 'strong',
       });
-      
+
       createdRelationId = result.createRelation.id;
     });
 
@@ -160,7 +160,7 @@ describe('Relations (E2E)', () => {
             fromEntityId,
             toEntityId,
           },
-        })
+        }),
       ).rejects.toThrow();
     });
 
@@ -185,7 +185,7 @@ describe('Relations (E2E)', () => {
             fromMaxCardinality: 1,
             toMaxCardinality: 1,
           },
-        }
+        },
       );
 
       const constrainedTypeId = constrainedType.createRelationType.id;
@@ -206,7 +206,7 @@ describe('Relations (E2E)', () => {
             entityTypeId,
             data: { name: 'Charlie' },
           },
-        }
+        },
       );
       const thirdEntityId = thirdEntity.createEntity.id;
 
@@ -235,7 +235,7 @@ describe('Relations (E2E)', () => {
             fromEntityId,
             toEntityId,
           },
-        })
+        }),
       ).rejects.toThrow();
 
       // Clean up
@@ -245,7 +245,7 @@ describe('Relations (E2E)', () => {
             success
           }
         }`,
-        { id: constrainedTypeId }
+        { id: constrainedTypeId },
       );
     });
   });
@@ -264,7 +264,7 @@ describe('Relations (E2E)', () => {
       `;
 
       const result = await testHelper.graphqlQuery(query);
-      
+
       expect(result.relations).toBeDefined();
       expect(Array.isArray(result.relations)).toBe(true);
       expect(result.relations.length).toBeGreaterThan(0);
@@ -309,7 +309,7 @@ describe('Relations (E2E)', () => {
 
       expect(result.relations).toBeDefined();
       expect(Array.isArray(result.relations)).toBe(true);
-      
+
       result.relations.forEach((relation: any) => {
         expect(relation.fromEntityId).toBe(fromEntityId);
       });

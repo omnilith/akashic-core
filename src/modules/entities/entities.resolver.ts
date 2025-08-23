@@ -4,6 +4,7 @@ import { EntitiesService } from './entities.service';
 import { EntityDto } from './dto/entity.dto';
 import { CreateEntityInput } from './dto/create-entity.input';
 import { EntityFilterInput } from '../query-builder/dto/query-filter.dto';
+import { DeleteEntityResponse } from './dto/delete-entity-response.dto';
 
 @Resolver(() => EntityDto)
 export class EntitiesResolver {
@@ -39,5 +40,10 @@ export class EntitiesResolver {
   @Query(() => Int)
   async countEntities(@Args('filter') filter: EntityFilterInput) {
     return await this.entitiesService.count(filter);
+  }
+
+  @Mutation(() => DeleteEntityResponse)
+  async deleteEntity(@Args('id') id: string) {
+    return await this.entitiesService.delete(id);
   }
 }
