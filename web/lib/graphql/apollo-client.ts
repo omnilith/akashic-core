@@ -87,7 +87,7 @@ export const apolloClient = new ApolloClient({
       Entity: {
         keyFields: ['id'],
       },
-      EntityType: {
+      EntityTypeDto: {
         keyFields: ['id'],
       },
       Relation: {

@@ -100,7 +100,7 @@ function makeClient() {
         Entity: {
           keyFields: ["id"],
         },
-        EntityType: {
+        EntityTypeDto: {
           keyFields: ["id"],
         },
         Relation: {

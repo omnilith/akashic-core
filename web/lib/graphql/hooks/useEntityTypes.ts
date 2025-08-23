@@ -111,10 +111,10 @@ export function useUpdateEntityType(
   const update = useCallback(
     async (id: string, input: any) => {
       const { data } = await updateEntityType({
-        variables: { id, input },
+        variables: { input: { id, ...input } },
         optimisticResponse: {
           updateEntityType: {
-            __typename: "EntityType",
+            __typename: "EntityTypeDto",
             id,
             ...input,
           },
@@ -123,7 +123,7 @@ export function useUpdateEntityType(
       return data?.updateEntityType;
     },
     [updateEntityType]
-  );
+  )
 
   return {
     update,
@@ -151,13 +151,13 @@ export function useDeleteEntityType(
         variables: { id },
         optimisticResponse: {
           deleteEntityType: {
-            __typename: "DeleteResult",
+            __typename: "DeleteEntityTypeResponse",
             id,
-            success: true,
+            deleted: true,
           },
         },
         update: (cache: any) => {
-          cache.evict({ id: `EntityType:${id}` });
+          cache.evict({ id: `EntityTypeDto:${id}` });
           cache.gc();
         },
       });
