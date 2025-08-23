@@ -17,7 +17,7 @@ describe('EntityTypes (E2E)', () => {
   describe('Create EntityType', () => {
     it('should create a new entity type', async () => {
       const testName = `${testEntityType.name}-${generateTestId()}`;
-      
+
       const mutation = `
         mutation CreateEntityType($input: CreateEntityTypeInput!) {
           createEntityType(input: $input) {
@@ -39,9 +39,13 @@ describe('EntityTypes (E2E)', () => {
 
       expect(result.createEntityType).toBeDefined();
       expect(result.createEntityType.name).toBe(testName);
-      expect(result.createEntityType.namespace).toBe(testEntityType.namespaceId);
-      expect(result.createEntityType.schemaJson).toEqual(testEntityType.schemaJson);
-      
+      expect(result.createEntityType.namespace).toBe(
+        testEntityType.namespaceId,
+      );
+      expect(result.createEntityType.schemaJson).toEqual(
+        testEntityType.schemaJson,
+      );
+
       createdEntityTypeId = result.createEntityType.id;
     });
 
@@ -63,7 +67,7 @@ describe('EntityTypes (E2E)', () => {
       };
 
       await expect(
-        testHelper.graphqlMutation(mutation, { input: invalidSchema })
+        testHelper.graphqlMutation(mutation, { input: invalidSchema }),
       ).rejects.toThrow();
     });
   });
@@ -81,7 +85,7 @@ describe('EntityTypes (E2E)', () => {
       `;
 
       const result = await testHelper.graphqlQuery(query);
-      
+
       expect(result.entityTypes).toBeDefined();
       expect(Array.isArray(result.entityTypes)).toBe(true);
       expect(result.entityTypes.length).toBeGreaterThan(0);
@@ -101,7 +105,9 @@ describe('EntityTypes (E2E)', () => {
 
       const result = await testHelper.graphqlQuery(query);
 
-      const foundType = result.entityTypes.find((t: any) => t.id === createdEntityTypeId);
+      const foundType = result.entityTypes.find(
+        (t: any) => t.id === createdEntityTypeId,
+      );
       expect(foundType).toBeDefined();
       expect(foundType.id).toBe(createdEntityTypeId);
     });
@@ -121,8 +127,10 @@ describe('EntityTypes (E2E)', () => {
 
       expect(result.entityTypes).toBeDefined();
       expect(Array.isArray(result.entityTypes)).toBe(true);
-      
-      const testTypes = result.entityTypes.filter((type: any) => type.namespace === 'test-e2e');
+
+      const testTypes = result.entityTypes.filter(
+        (type: any) => type.namespace === 'test-e2e',
+      );
       expect(testTypes.length).toBeGreaterThan(0);
     });
   });
@@ -147,9 +155,9 @@ describe('EntityTypes (E2E)', () => {
         });
         createdEntityTypeId = created.createEntityType.id;
       }
-      
+
       const newName = 'UpdatedTestPerson';
-      
+
       const mutation = `
         mutation UpdateEntityType($input: UpdateEntityTypeInput!) {
           updateEntityType(input: $input) {
@@ -189,7 +197,7 @@ describe('EntityTypes (E2E)', () => {
         });
         createdEntityTypeId = created.createEntityType.id;
       }
-      
+
       const updatedSchema = {
         ...testEntityType.schemaJson,
         properties: {
@@ -242,7 +250,7 @@ describe('EntityTypes (E2E)', () => {
         });
         createdEntityTypeId = created.createEntityType.id;
       }
-      
+
       const mutation = `
         mutation DeleteEntityType($id: ID!) {
           deleteEntityType(id: $id) {
@@ -270,7 +278,9 @@ describe('EntityTypes (E2E)', () => {
 
       const queryResult = await testHelper.graphqlQuery(query);
 
-      const deletedType = queryResult.entityTypes.find((t: any) => t.id === createdEntityTypeId);
+      const deletedType = queryResult.entityTypes.find(
+        (t: any) => t.id === createdEntityTypeId,
+      );
       expect(deletedType).toBeUndefined();
     });
   });

@@ -42,18 +42,20 @@ describe('CLI Commands (E2E)', () => {
             success
           }
         }`,
-        { id: entityTypeId }
+        { id: entityTypeId },
       );
     }
-    
+
     await testHelper.teardownTestApp();
   });
 
   describe('List Commands', () => {
     it('should list entity types', async () => {
-      const { stdout } = await execAsync('npm run akashic -- list-types --json');
+      const { stdout } = await execAsync(
+        'npm run akashic -- list-types --json',
+      );
       const types = JSON.parse(stdout);
-      
+
       expect(Array.isArray(types)).toBe(true);
       expect(types.length).toBeGreaterThan(0);
       expect(types.some((t: any) => t.id === entityTypeId)).toBe(true);
@@ -79,10 +81,10 @@ describe('CLI Commands (E2E)', () => {
 
       // List entities with type filter
       const { stdout } = await execAsync(
-        `npm run akashic -- list --type ${entityTypeId} --json`
+        `npm run akashic -- list --type ${entityTypeId} --json`,
       );
       const entities = JSON.parse(stdout);
-      
+
       expect(Array.isArray(entities)).toBe(true);
       expect(entities.some((e: any) => e.id === entityId)).toBe(true);
     });
@@ -91,10 +93,10 @@ describe('CLI Commands (E2E)', () => {
   describe('Show Type Command', () => {
     it('should show detailed type information', async () => {
       const { stdout } = await execAsync(
-        `npm run akashic -- show-type ${entityTypeId} --json`
+        `npm run akashic -- show-type ${entityTypeId} --json`,
       );
       const typeInfo = JSON.parse(stdout);
-      
+
       expect(typeInfo).toBeDefined();
       expect(typeInfo.id).toBe(entityTypeId);
       expect(typeInfo.schemaJson).toBeDefined();
@@ -129,10 +131,10 @@ describe('CLI Commands (E2E)', () => {
 
     it('should search entities by field value', async () => {
       const { stdout } = await execAsync(
-        `npm run akashic -- search --type ${entityTypeId} name="Search Test 0" --json`
+        `npm run akashic -- search --type ${entityTypeId} name="Search Test 0" --json`,
       );
       const results = JSON.parse(stdout);
-      
+
       expect(Array.isArray(results)).toBe(true);
       expect(results.length).toBeGreaterThan(0);
       expect(results[0].data.name).toBe('Search Test 0');
@@ -147,10 +149,10 @@ describe('CLI Commands (E2E)', () => {
       });
 
       const { stdout } = await execAsync(
-        `npm run akashic -- search --type ${entityTypeId} --filter '${filter}' --json`
+        `npm run akashic -- search --type ${entityTypeId} --filter '${filter}' --json`,
       );
       const results = JSON.parse(stdout);
-      
+
       expect(Array.isArray(results)).toBe(true);
       results.forEach((entity: any) => {
         expect(entity.data.age).toBeGreaterThanOrEqual(21);
@@ -161,11 +163,9 @@ describe('CLI Commands (E2E)', () => {
 
   describe('Health Check Command', () => {
     it('should run health checks', async () => {
-      const { stdout } = await execAsync(
-        'npm run akashic -- health --json'
-      );
+      const { stdout } = await execAsync('npm run akashic -- health --json');
       const healthResults = JSON.parse(stdout);
-      
+
       expect(healthResults).toBeDefined();
       expect(healthResults.summary).toBeDefined();
       expect(healthResults.results).toBeDefined();
@@ -174,10 +174,10 @@ describe('CLI Commands (E2E)', () => {
 
     it('should filter health checks by severity', async () => {
       const { stdout } = await execAsync(
-        'npm run akashic -- health --severity warning --json'
+        'npm run akashic -- health --severity warning --json',
       );
       const healthResults = JSON.parse(stdout);
-      
+
       expect(healthResults).toBeDefined();
       healthResults.results.forEach((result: any) => {
         expect(['warning', 'critical']).toContain(result.severity);
@@ -186,19 +186,17 @@ describe('CLI Commands (E2E)', () => {
 
     it('should export health check results', async () => {
       const exportPath = `/tmp/health-report-${generateTestId()}.json`;
-      
-      await execAsync(
-        `npm run akashic -- health --export ${exportPath}`
-      );
-      
+
+      await execAsync(`npm run akashic -- health --export ${exportPath}`);
+
       // Verify file was created
       const { stdout } = await execAsync(`cat ${exportPath}`);
       const report = JSON.parse(stdout);
-      
+
       expect(report).toBeDefined();
       expect(report.summary).toBeDefined();
       expect(report.timestamp).toBeDefined();
-      
+
       // Clean up
       await execAsync(`rm ${exportPath}`);
     });
@@ -207,21 +205,21 @@ describe('CLI Commands (E2E)', () => {
   describe('Import/Export Commands', () => {
     it('should export entities', async () => {
       const exportPath = `/tmp/export-${generateTestId()}.json`;
-      
+
       await execAsync(
-        `npm run akashic -- export --namespace test-e2e --output ${exportPath}`
+        `npm run akashic -- export --namespace test-e2e --output ${exportPath}`,
       );
-      
+
       // Verify export file
       const { stdout } = await execAsync(`cat ${exportPath}`);
       const exportData = JSON.parse(stdout);
-      
+
       expect(exportData).toBeDefined();
       expect(exportData.entityTypes).toBeDefined();
       expect(exportData.entities).toBeDefined();
       expect(exportData.relationTypes).toBeDefined();
       expect(exportData.relations).toBeDefined();
-      
+
       // Clean up
       await execAsync(`rm ${exportPath}`);
     });
@@ -248,22 +246,20 @@ describe('CLI Commands (E2E)', () => {
       };
 
       const importPath = `/tmp/import-${generateTestId()}.json`;
-      
+
       // Create import file
-      await execAsync(
-        `echo '${JSON.stringify(importData)}' > ${importPath}`
-      );
-      
+      await execAsync(`echo '${JSON.stringify(importData)}' > ${importPath}`);
+
       // Import data
       const { stdout } = await execAsync(
-        `npm run akashic -- import ${importPath} --json`
+        `npm run akashic -- import ${importPath} --json`,
       );
       const importResult = JSON.parse(stdout);
-      
+
       expect(importResult).toBeDefined();
       expect(importResult.imported).toBeDefined();
       expect(importResult.imported.entityTypes).toBe(1);
-      
+
       // Clean up
       await execAsync(`rm ${importPath}`);
     });
@@ -279,10 +275,10 @@ describe('CLI Commands (E2E)', () => {
       };
 
       const { stdout } = await execAsync(
-        `npm run akashic -- create entity --type ${entityTypeId} --data '${JSON.stringify(entityData)}' --json`
+        `npm run akashic -- create entity --type ${entityTypeId} --data '${JSON.stringify(entityData)}' --json`,
       );
       const created = JSON.parse(stdout);
-      
+
       expect(created).toBeDefined();
       expect(created.id).toBeDefined();
       expect(created.data).toEqual(entityData);
@@ -313,10 +309,10 @@ describe('CLI Commands (E2E)', () => {
       };
 
       const { stdout } = await execAsync(
-        `npm run akashic -- update ${updateId} --data '${JSON.stringify(updateData)}' --json`
+        `npm run akashic -- update ${updateId} --data '${JSON.stringify(updateData)}' --json`,
       );
       const updated = JSON.parse(stdout);
-      
+
       expect(updated).toBeDefined();
       expect(updated.id).toBe(updateId);
       expect(updated.data.name).toBe('Updated via CLI');
@@ -343,10 +339,10 @@ describe('CLI Commands (E2E)', () => {
 
       // Delete via CLI
       const { stdout } = await execAsync(
-        `npm run akashic -- delete ${deleteId} --confirm --json`
+        `npm run akashic -- delete ${deleteId} --confirm --json`,
       );
       const deleteResult = JSON.parse(stdout);
-      
+
       expect(deleteResult).toBeDefined();
       expect(deleteResult.success).toBe(true);
 

@@ -15,7 +15,7 @@ export class TestHelper {
     this.app = moduleFixture.createNestApplication();
     await this.app.init();
     this.server = this.app.getHttpServer();
-    
+
     return this.app;
   }
 
@@ -26,12 +26,10 @@ export class TestHelper {
   }
 
   async graphqlRequest(query: string, variables?: any): Promise<any> {
-    const response = await request(this.server)
-      .post('/graphql')
-      .send({
-        query,
-        variables,
-      });
+    const response = await request(this.server).post('/graphql').send({
+      query,
+      variables,
+    });
 
     // GraphQL can return 200 even with errors, or 400 for malformed queries
     if (response.status !== 200 && response.status !== 400) {
@@ -40,7 +38,7 @@ export class TestHelper {
 
     if (response.body.errors) {
       throw new Error(
-        `GraphQL errors: ${JSON.stringify(response.body.errors, null, 2)}`
+        `GraphQL errors: ${JSON.stringify(response.body.errors, null, 2)}`,
       );
     }
 
@@ -67,17 +65,17 @@ export class TestHelper {
 export async function waitFor(
   condition: () => Promise<boolean>,
   timeout = 5000,
-  interval = 100
+  interval = 100,
 ): Promise<void> {
   const startTime = Date.now();
-  
+
   while (Date.now() - startTime < timeout) {
     if (await condition()) {
       return;
     }
-    await new Promise(resolve => setTimeout(resolve, interval));
+    await new Promise((resolve) => setTimeout(resolve, interval));
   }
-  
+
   throw new Error(`Timeout waiting for condition after ${timeout}ms`);
 }
 
