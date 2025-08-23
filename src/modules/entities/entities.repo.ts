@@ -2,7 +2,7 @@
 import { Injectable } from '@nestjs/common';
 import { DrizzleService } from '../../db/drizzle.service';
 import { entity, InsertEntity, Entity } from '../../db/schema';
-import { eq, and, SQL } from 'drizzle-orm';
+import { eq, and, SQL, sql } from 'drizzle-orm';
 import { QueryBuilderService } from '../query-builder/query-builder.service';
 import { EntityFilterInput } from '../query-builder/dto/query-filter.dto';
 
@@ -52,7 +52,7 @@ export class EntitiesRepo {
     return found || null;
   }
 
-  async update(id: string, data: any): Promise<Entity | null> {
+  async update(id: string, data: unknown): Promise<Entity | null> {
     const [updated] = await this.drizzle.db
       .update(entity)
       .set({
@@ -69,50 +69,50 @@ export class EntitiesRepo {
     const conditions = this.queryBuilder.buildWhereConditions(filter);
     const orderBy = this.queryBuilder.buildOrderBy(filter.sort);
 
-    // Build the base query
-    const baseQuery = this.drizzle.db.select().from(entity);
+    // Build query with method chaining
+    let query = this.drizzle.db.select().from(entity);
 
     // Apply WHERE conditions
-    const whereQuery =
-      conditions.length > 0
-        ? baseQuery.where(
-            conditions.length === 1 ? conditions[0] : and(...conditions),
-          )
-        : baseQuery;
+    if (conditions.length > 0) {
+      query = query.where(
+        conditions.length === 1 ? conditions[0] : and(...conditions),
+      ) as typeof query;
+    }
 
     // Apply ORDER BY
-    let orderedQuery = whereQuery;
-    for (const order of orderBy) {
-      // @ts-expect-error - Drizzle types don't properly handle dynamic orderBy
-      orderedQuery = orderedQuery.orderBy(order);
+    if (orderBy.length > 0) {
+      // Use the first order clause if available
+      // Note: Drizzle's chaining for multiple orderBy needs proper typing
+      query = query.orderBy(...orderBy) as typeof query;
     }
 
     // Apply LIMIT
-    const limitedQuery = filter.limit
-      ? orderedQuery.limit(filter.limit)
-      : orderedQuery;
+    if (filter.limit) {
+      query = query.limit(filter.limit) as typeof query;
+    }
 
     // Apply OFFSET
-    const finalQuery = filter.offset
-      ? limitedQuery.offset(filter.offset)
-      : limitedQuery;
+    if (filter.offset) {
+      query = query.offset(filter.offset) as typeof query;
+    }
 
-    return await finalQuery;
+    return await query;
   }
 
   async count(filter: EntityFilterInput): Promise<number> {
     const conditions = this.queryBuilder.buildWhereConditions(filter);
 
-    const baseQuery = this.drizzle.db.select({ count: entity.id }).from(entity);
+    let query = this.drizzle.db
+      .select({ count: sql<number>`count(*)` })
+      .from(entity);
 
-    const whereQuery =
-      conditions.length > 0
-        ? baseQuery.where(
-            conditions.length === 1 ? conditions[0] : and(...conditions),
-          )
-        : baseQuery;
+    if (conditions.length > 0) {
+      query = query.where(
+        conditions.length === 1 ? conditions[0] : and(...conditions),
+      ) as typeof query;
+    }
 
-    const result = await whereQuery;
-    return result.length;
+    const [result] = await query;
+    return result?.count ?? 0;
   }
 }
