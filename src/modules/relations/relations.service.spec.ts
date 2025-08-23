@@ -48,9 +48,13 @@ describe('RelationsService', () => {
         {
           provide: DrizzleService,
           useValue: {
-            transaction: jest.fn().mockImplementation(async (callback: any) => {
-              return await callback({});
-            }),
+            transaction: jest
+              .fn()
+              .mockImplementation(
+                async <T>(callback: (tx: any) => Promise<T>): Promise<T> => {
+                  return await callback({});
+                },
+              ),
             db: {},
           },
         },
