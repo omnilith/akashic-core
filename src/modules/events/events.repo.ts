@@ -8,7 +8,9 @@ export class EventsRepo {
   constructor(private drizzle: DrizzleService) {}
 
   private getDb(tx?: DrizzleTransaction) {
-    return (tx ?? this.drizzle.db) as typeof this.drizzle.db;
+    // Both NodePgDatabase and NodePgTransaction share the same query interface
+    // This helper ensures we use the transaction if provided, otherwise the main db
+    return tx ?? this.drizzle.db;
   }
 
   async create(

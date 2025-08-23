@@ -9,7 +9,9 @@ export class RelationsRepo {
   constructor(private drizzle: DrizzleService) {}
 
   private getDb(tx?: DrizzleTransaction) {
-    return (tx ?? this.drizzle.db) as typeof this.drizzle.db;
+    // Both NodePgDatabase and NodePgTransaction share the same query interface
+    // This helper ensures we use the transaction if provided, otherwise the main db
+    return tx ?? this.drizzle.db;
   }
 
   async create(
@@ -61,8 +63,9 @@ export class RelationsRepo {
     return found || null;
   }
 
-  async delete(id: string): Promise<boolean> {
-    const result = await this.drizzle.db
+  async delete(id: string, tx?: DrizzleTransaction): Promise<boolean> {
+    const db = this.getDb(tx);
+    const result = await db
       .delete(relation)
       .where(eq(relation.id, id))
       .returning();

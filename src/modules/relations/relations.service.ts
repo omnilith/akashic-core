@@ -27,14 +27,14 @@ export class RelationsService {
     toEntityId: string,
     metadata?: unknown,
   ) {
-    // 1. Validate that the relation type exists
+    // 1. Validate that the relation type exists (outside transaction)
     const relationType =
       await this.relationTypesService.findById(relationTypeId);
     if (!relationType) {
       throw new BadRequestException('RelationType not found');
     }
 
-    // 2. Validate that both entities exist
+    // 2. Validate that both entities exist (outside transaction)
     const fromEntity = await this.entitiesService.findById(fromEntityId);
     if (!fromEntity) {
       throw new BadRequestException('From Entity not found');
@@ -58,29 +58,37 @@ export class RelationsService {
       );
     }
 
-    // 4. Create the relation
-    const relation = await this.relationsRepo.create({
-      namespace,
-      relationTypeId,
-      fromEntityId,
-      toEntityId,
-      metadata,
-    });
+    // 4. Create the relation and log event in a transaction
+    return await this.drizzleService.transaction(async (tx) => {
+      const relation = await this.relationsRepo.create(
+        {
+          namespace,
+          relationTypeId,
+          fromEntityId,
+          toEntityId,
+          metadata,
+        },
+        tx,
+      );
 
-    await this.eventsService.logEvent({
-      eventType: 'relation.created',
-      resourceType: 'relation',
-      resourceId: relation.id,
-      namespace,
-      payload: {
-        relationTypeId,
-        fromEntityId,
-        toEntityId,
-        metadata,
-      },
-    });
+      await this.eventsService.logEvent(
+        {
+          eventType: 'relation.created',
+          resourceType: 'relation',
+          resourceId: relation.id,
+          namespace,
+          payload: {
+            relationTypeId,
+            fromEntityId,
+            toEntityId,
+            metadata,
+          },
+        },
+        tx,
+      );
 
-    return relation;
+      return relation;
+    });
   }
 
   async findAll(filters?: {
@@ -97,28 +105,35 @@ export class RelationsService {
   }
 
   async delete(id: string) {
+    // Fetch relation outside transaction for validation
     const relation = await this.relationsRepo.findById(id);
     if (!relation) {
       throw new NotFoundException('Relation not found');
     }
 
-    const deleted = await this.relationsRepo.delete(id);
-    if (!deleted) {
-      throw new BadRequestException('Failed to delete relation');
-    }
+    // Delete relation and log event in a transaction
+    return await this.drizzleService.transaction(async (tx) => {
+      const deleted = await this.relationsRepo.delete(id, tx);
+      if (!deleted) {
+        throw new BadRequestException('Failed to delete relation');
+      }
 
-    await this.eventsService.logEvent({
-      eventType: 'relation.deleted',
-      resourceType: 'relation',
-      resourceId: id,
-      namespace: relation.namespace,
-      payload: {
-        relationTypeId: relation.relationTypeId,
-        fromEntityId: relation.fromEntityId,
-        toEntityId: relation.toEntityId,
-      },
+      await this.eventsService.logEvent(
+        {
+          eventType: 'relation.deleted',
+          resourceType: 'relation',
+          resourceId: id,
+          namespace: relation.namespace,
+          payload: {
+            relationTypeId: relation.relationTypeId,
+            fromEntityId: relation.fromEntityId,
+            toEntityId: relation.toEntityId,
+          },
+        },
+        tx,
+      );
+
+      return relation;
     });
-
-    return relation;
   }
 }

@@ -48,7 +48,9 @@ describe('RelationsService', () => {
         {
           provide: DrizzleService,
           useValue: {
-            transaction: jest.fn((callback) => callback({})),
+            transaction: jest.fn().mockImplementation(async (callback: any) => {
+              return await callback({});
+            }),
             db: {},
           },
         },
@@ -140,25 +142,31 @@ describe('RelationsService', () => {
       );
       expect(entitiesService.findById).toHaveBeenCalledWith(fromEntityId);
       expect(entitiesService.findById).toHaveBeenCalledWith(toEntityId);
-      expect(repo.create).toHaveBeenCalledWith({
-        namespace,
-        relationTypeId,
-        fromEntityId,
-        toEntityId,
-        metadata,
-      });
-      expect(eventsService.logEvent).toHaveBeenCalledWith({
-        eventType: 'relation.created',
-        resourceType: 'relation',
-        resourceId: mockRelation.id,
-        namespace,
-        payload: {
+      expect(repo.create).toHaveBeenCalledWith(
+        {
+          namespace,
           relationTypeId,
           fromEntityId,
           toEntityId,
           metadata,
         },
-      });
+        {}, // tx parameter from mock
+      );
+      expect(eventsService.logEvent).toHaveBeenCalledWith(
+        {
+          eventType: 'relation.created',
+          resourceType: 'relation',
+          resourceId: mockRelation.id,
+          namespace,
+          payload: {
+            relationTypeId,
+            fromEntityId,
+            toEntityId,
+            metadata,
+          },
+        },
+        {}, // tx parameter from mock
+      );
       expect(result).toEqual(mockRelation);
     });
 
@@ -196,13 +204,16 @@ describe('RelationsService', () => {
         toEntityId,
       );
 
-      expect(repo.create).toHaveBeenCalledWith({
-        namespace,
-        relationTypeId,
-        fromEntityId,
-        toEntityId,
-        metadata: undefined,
-      });
+      expect(repo.create).toHaveBeenCalledWith(
+        {
+          namespace,
+          relationTypeId,
+          fromEntityId,
+          toEntityId,
+          metadata: undefined,
+        },
+        {}, // tx parameter from mock
+      );
       expect(result).toEqual(mockRelation);
     });
 
@@ -419,18 +430,21 @@ describe('RelationsService', () => {
       const result = await service.delete(relationId);
 
       expect(repo.findById).toHaveBeenCalledWith(relationId);
-      expect(repo.delete).toHaveBeenCalledWith(relationId);
-      expect(eventsService.logEvent).toHaveBeenCalledWith({
-        eventType: 'relation.deleted',
-        resourceType: 'relation',
-        resourceId: relationId,
-        namespace: mockRelation.namespace,
-        payload: {
-          relationTypeId: mockRelation.relationTypeId,
-          fromEntityId: mockRelation.fromEntityId,
-          toEntityId: mockRelation.toEntityId,
+      expect(repo.delete).toHaveBeenCalledWith(relationId, {}); // tx parameter from mock
+      expect(eventsService.logEvent).toHaveBeenCalledWith(
+        {
+          eventType: 'relation.deleted',
+          resourceType: 'relation',
+          resourceId: relationId,
+          namespace: mockRelation.namespace,
+          payload: {
+            relationTypeId: mockRelation.relationTypeId,
+            fromEntityId: mockRelation.fromEntityId,
+            toEntityId: mockRelation.toEntityId,
+          },
         },
-      });
+        {}, // tx parameter from mock
+      );
       expect(result).toEqual(mockRelation);
     });
 
