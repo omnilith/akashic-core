@@ -32,10 +32,8 @@ export const testEntityType = {
 
 export const testRelationType = {
   name: 'TestFriendOf',
-  description: 'Test friend relationship for E2E tests',
-  namespaceId: 'test-e2e',
-  fromMaxCardinality: null,
-  toMaxCardinality: null,
+  namespace: 'test-e2e',
+  cardinality: 'n..n',
 };
 
 export const testProcessDefinition = {
