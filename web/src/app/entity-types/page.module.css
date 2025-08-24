@@ -54,6 +54,49 @@
   letter-spacing: 0.02em;
 }
 
+.filterSection {
+  margin: 1.5rem 0;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.filterLabel {
+  color: rgba(0, 255, 255, 0.8);
+  font-weight: 600;
+  text-transform: uppercase;
+  font-size: 0.85rem;
+  letter-spacing: 0.05em;
+}
+
+.filterSelect {
+  background: linear-gradient(135deg, rgba(0, 20, 40, 0.9) 0%, rgba(10, 10, 30, 0.9) 100%);
+  border: 1px solid rgba(0, 255, 255, 0.3);
+  color: #00ffff;
+  padding: 0.5rem 1rem;
+  border-radius: 6px;
+  font-family: 'Courier New', monospace;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  outline: none;
+}
+
+.filterSelect:hover {
+  border-color: rgba(255, 0, 255, 0.5);
+  box-shadow: 0 0 15px rgba(0, 255, 255, 0.3);
+}
+
+.filterSelect:focus {
+  border-color: #00ffff;
+  box-shadow: 0 0 20px rgba(0, 255, 255, 0.5);
+}
+
+.filterSelect option {
+  background: #0a0a0f;
+  color: #00ffff;
+}
+
 .count {
   margin-top: 1rem;
   padding: 0.5rem 1rem;

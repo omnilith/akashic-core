@@ -2,12 +2,28 @@
 
 import { GET_ENTITY_TYPES, type EntityType } from '@/lib/queries/entity-types';
 import { useQuery } from '@apollo/client/react';
+import { useState, useMemo } from 'react';
 import styles from './page.module.css';
 
 export default function EntityTypesPage() {
   const { data, error } = useQuery<{ entityTypes: EntityType[] }>(
     GET_ENTITY_TYPES,
   );
+  const [selectedNamespace, setSelectedNamespace] = useState<string>('all');
+
+  const allEntityTypes = useMemo(() => {
+    return data?.entityTypes || [];
+  }, [data?.entityTypes]);
+  
+  const namespaces = useMemo(() => {
+    const uniqueNamespaces = new Set(allEntityTypes.map(et => et.namespace));
+    return Array.from(uniqueNamespaces).sort();
+  }, [allEntityTypes]);
+  
+  const entityTypes = useMemo(() => {
+    if (selectedNamespace === 'all') return allEntityTypes;
+    return allEntityTypes.filter(et => et.namespace === selectedNamespace);
+  }, [allEntityTypes, selectedNamespace]);
 
   if (error) {
     return (
@@ -20,8 +36,6 @@ export default function EntityTypesPage() {
     );
   }
 
-  const entityTypes = data?.entityTypes || [];
-
   return (
     <div className={styles.container}>
       <div className={styles.header}>
@@ -29,8 +43,22 @@ export default function EntityTypesPage() {
         <p className={styles.subtitle}>
           Manage your ontology definitions and schemas
         </p>
+        <div className={styles.filterSection}>
+          <label className={styles.filterLabel}>Namespace:</label>
+          <select 
+            className={styles.filterSelect}
+            value={selectedNamespace}
+            onChange={(e) => setSelectedNamespace(e.target.value)}
+          >
+            <option value="all">All namespaces</option>
+            {namespaces.map(ns => (
+              <option key={ns} value={ns}>{ns}</option>
+            ))}
+          </select>
+        </div>
         <p className={styles.count}>
           [{entityTypes.length}] entity types found
+          {selectedNamespace !== 'all' && ` in ${selectedNamespace}`}
         </p>
       </div>
 
