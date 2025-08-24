@@ -197,7 +197,7 @@ describe('EntitiesService', () => {
 
       const result = await service.findAll();
 
-      expect(repo.findAll).toHaveBeenCalledWith(undefined, undefined);
+      expect(repo.findAll).toHaveBeenCalledWith(undefined, undefined, undefined, undefined);
       expect(result).toEqual(mockEntities);
     });
 
@@ -220,7 +220,7 @@ describe('EntitiesService', () => {
 
       const result = await service.findAll(namespace, entityTypeId);
 
-      expect(repo.findAll).toHaveBeenCalledWith(namespace, entityTypeId);
+      expect(repo.findAll).toHaveBeenCalledWith(namespace, entityTypeId, undefined, undefined);
       expect(result).toEqual(mockEntities);
     });
   });

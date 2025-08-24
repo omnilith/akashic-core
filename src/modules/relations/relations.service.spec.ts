@@ -320,7 +320,11 @@ describe('RelationsService', () => {
 
       const result = await service.findAll();
 
-      expect(repo.findAll).toHaveBeenCalledWith(undefined);
+      expect(repo.findAll).toHaveBeenCalledWith(
+        undefined,
+        undefined,
+        undefined,
+      );
       expect(result).toEqual(mockRelations);
     });
 
@@ -342,7 +346,7 @@ describe('RelationsService', () => {
 
       const result = await service.findAll(filters);
 
-      expect(repo.findAll).toHaveBeenCalledWith(filters);
+      expect(repo.findAll).toHaveBeenCalledWith(filters, undefined, undefined);
       expect(result).toEqual(mockRelations);
     });
 
@@ -370,7 +374,7 @@ describe('RelationsService', () => {
 
       const result = await service.findAll(filters);
 
-      expect(repo.findAll).toHaveBeenCalledWith(filters);
+      expect(repo.findAll).toHaveBeenCalledWith(filters, undefined, undefined);
       expect(result).toEqual(mockRelations);
     });
   });

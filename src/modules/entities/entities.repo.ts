@@ -27,7 +27,12 @@ export class EntitiesRepo {
     return newEntity;
   }
 
-  async findAll(namespace?: string, entityTypeId?: string): Promise<Entity[]> {
+  async findAll(
+    namespace?: string,
+    entityTypeId?: string,
+    limit?: number,
+    offset?: number,
+  ): Promise<Entity[]> {
     const conditions: SQL[] = [];
 
     if (namespace) {
@@ -38,14 +43,48 @@ export class EntitiesRepo {
       conditions.push(eq(entity.entityTypeId, entityTypeId));
     }
 
+    let query = this.drizzle.db.select().from(entity);
+
     if (conditions.length > 0) {
-      return await this.drizzle.db
-        .select()
-        .from(entity)
-        .where(conditions.length === 1 ? conditions[0] : and(...conditions));
+      query = query.where(
+        conditions.length === 1 ? conditions[0] : and(...conditions),
+      ) as typeof query;
     }
 
-    return await this.drizzle.db.select().from(entity);
+    if (limit) {
+      query = query.limit(limit) as typeof query;
+    }
+
+    if (offset) {
+      query = query.offset(offset) as typeof query;
+    }
+
+    return await query;
+  }
+
+  async countAll(namespace?: string, entityTypeId?: string): Promise<number> {
+    const conditions: SQL[] = [];
+
+    if (namespace) {
+      conditions.push(eq(entity.namespace, namespace));
+    }
+
+    if (entityTypeId) {
+      conditions.push(eq(entity.entityTypeId, entityTypeId));
+    }
+
+    let query = this.drizzle.db
+      .select({ count: sql<number>`count(*)` })
+      .from(entity);
+
+    if (conditions.length > 0) {
+      query = query.where(
+        conditions.length === 1 ? conditions[0] : and(...conditions),
+      ) as typeof query;
+    }
+
+    const [result] = await query;
+    return result?.count ?? 0;
   }
 
   async findById(id: string, tx?: DrizzleTransaction): Promise<Entity | null> {

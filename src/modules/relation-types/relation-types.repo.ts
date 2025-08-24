@@ -22,15 +22,43 @@ export class RelationTypesRepo {
     return newRelationType;
   }
 
-  async findAll(namespace?: string): Promise<RelationType[]> {
+  async findAll(
+    namespace?: string,
+    limit?: number,
+    offset?: number,
+  ): Promise<RelationType[]> {
+    let query = this.drizzle.db.select().from(relationType);
+
     if (namespace) {
-      return await this.drizzle.db
-        .select()
-        .from(relationType)
-        .where(eq(relationType.namespace, namespace));
+      query = query.where(
+        eq(relationType.namespace, namespace),
+      ) as typeof query;
     }
 
-    return await this.drizzle.db.select().from(relationType);
+    if (limit) {
+      query = query.limit(limit) as typeof query;
+    }
+
+    if (offset) {
+      query = query.offset(offset) as typeof query;
+    }
+
+    return await query;
+  }
+
+  async countAll(namespace?: string): Promise<number> {
+    let query = this.drizzle.db
+      .select({ count: sql<number>`count(*)` })
+      .from(relationType);
+
+    if (namespace) {
+      query = query.where(
+        eq(relationType.namespace, namespace),
+      ) as typeof query;
+    }
+
+    const [result] = await query;
+    return result?.count ?? 0;
   }
 
   async findById(id: string): Promise<RelationType | null> {

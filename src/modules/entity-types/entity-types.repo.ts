@@ -21,15 +21,39 @@ export class EntityTypesRepo {
     return newEntityType;
   }
 
-  async findAll(namespace?: string): Promise<EntityType[]> {
+  async findAll(
+    namespace?: string,
+    limit?: number,
+    offset?: number,
+  ): Promise<EntityType[]> {
+    let query = this.drizzle.db.select().from(entityType);
+
     if (namespace) {
-      return await this.drizzle.db
-        .select()
-        .from(entityType)
-        .where(eq(entityType.namespace, namespace));
+      query = query.where(eq(entityType.namespace, namespace)) as typeof query;
     }
 
-    return await this.drizzle.db.select().from(entityType);
+    if (limit) {
+      query = query.limit(limit) as typeof query;
+    }
+
+    if (offset) {
+      query = query.offset(offset) as typeof query;
+    }
+
+    return await query;
+  }
+
+  async countAll(namespace?: string): Promise<number> {
+    let query = this.drizzle.db
+      .select({ count: sql<number>`count(*)` })
+      .from(entityType);
+
+    if (namespace) {
+      query = query.where(eq(entityType.namespace, namespace)) as typeof query;
+    }
+
+    const [result] = await query;
+    return result?.count ?? 0;
   }
 
   async findById(id: string): Promise<EntityType | null> {

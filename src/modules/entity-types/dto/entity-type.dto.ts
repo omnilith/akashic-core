@@ -19,6 +19,6 @@ export class EntityTypeDto {
   @Field(() => JSONScalar)
   schemaJson: any;
 
-  @Field()
-  createdAt: Date;
+  @Field({ nullable: true })
+  createdAt: Date | null;
 }

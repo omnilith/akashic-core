@@ -2,7 +2,7 @@
 import { Injectable } from '@nestjs/common';
 import { DrizzleService, DrizzleTransaction } from '../../db/drizzle.service';
 import { relation, InsertRelation, Relation } from '../../db/schema';
-import { eq, and, SQL } from 'drizzle-orm';
+import { eq, and, SQL, sql } from 'drizzle-orm';
 
 @Injectable()
 export class RelationsRepo {
@@ -23,12 +23,16 @@ export class RelationsRepo {
     return newRelation;
   }
 
-  async findAll(filters?: {
-    namespace?: string;
-    relationTypeId?: string;
-    fromEntityId?: string;
-    toEntityId?: string;
-  }): Promise<Relation[]> {
+  async findAll(
+    filters?: {
+      namespace?: string;
+      relationTypeId?: string;
+      fromEntityId?: string;
+      toEntityId?: string;
+    },
+    limit?: number,
+    offset?: number,
+  ): Promise<Relation[]> {
     const conditions: SQL[] = [];
 
     if (filters?.namespace) {
@@ -44,14 +48,54 @@ export class RelationsRepo {
       conditions.push(eq(relation.toEntityId, filters.toEntityId));
     }
 
+    let query = this.drizzle.db.select().from(relation);
+
     if (conditions.length > 0) {
-      return await this.drizzle.db
-        .select()
-        .from(relation)
-        .where(and(...conditions));
+      query = query.where(and(...conditions)) as typeof query;
     }
 
-    return await this.drizzle.db.select().from(relation);
+    if (limit) {
+      query = query.limit(limit) as typeof query;
+    }
+
+    if (offset) {
+      query = query.offset(offset) as typeof query;
+    }
+
+    return await query;
+  }
+
+  async countAll(filters?: {
+    namespace?: string;
+    relationTypeId?: string;
+    fromEntityId?: string;
+    toEntityId?: string;
+  }): Promise<number> {
+    const conditions: SQL[] = [];
+
+    if (filters?.namespace) {
+      conditions.push(eq(relation.namespace, filters.namespace));
+    }
+    if (filters?.relationTypeId) {
+      conditions.push(eq(relation.relationTypeId, filters.relationTypeId));
+    }
+    if (filters?.fromEntityId) {
+      conditions.push(eq(relation.fromEntityId, filters.fromEntityId));
+    }
+    if (filters?.toEntityId) {
+      conditions.push(eq(relation.toEntityId, filters.toEntityId));
+    }
+
+    let query = this.drizzle.db
+      .select({ count: sql<number>`count(*)` })
+      .from(relation);
+
+    if (conditions.length > 0) {
+      query = query.where(and(...conditions)) as typeof query;
+    }
+
+    const [result] = await query;
+    return result?.count ?? 0;
   }
 
   async findById(id: string): Promise<Relation | null> {

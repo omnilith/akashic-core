@@ -91,13 +91,26 @@ export class RelationsService {
     });
   }
 
-  async findAll(filters?: {
+  async findAll(
+    filters?: {
+      namespace?: string;
+      relationTypeId?: string;
+      fromEntityId?: string;
+      toEntityId?: string;
+    },
+    limit?: number,
+    offset?: number,
+  ) {
+    return await this.relationsRepo.findAll(filters, limit, offset);
+  }
+
+  async countAll(filters?: {
     namespace?: string;
     relationTypeId?: string;
     fromEntityId?: string;
     toEntityId?: string;
   }) {
-    return await this.relationsRepo.findAll(filters);
+    return await this.relationsRepo.countAll(filters);
   }
 
   async findById(id: string) {

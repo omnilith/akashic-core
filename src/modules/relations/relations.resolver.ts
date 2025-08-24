@@ -1,8 +1,9 @@
 // src/modules/relations/relations.resolver.ts
-import { Resolver, Query, Mutation, Args, ID } from '@nestjs/graphql';
+import { Resolver, Query, Mutation, Args, ID, Int } from '@nestjs/graphql';
 import { RelationsService } from './relations.service';
 import { RelationDto } from './dto/relation.dto';
 import { CreateRelationInput } from './dto/create-relation.input';
+import { RelationConnection } from './dto/relation-connection.dto';
 
 @Resolver(() => RelationDto)
 export class RelationsResolver {
@@ -48,8 +49,10 @@ export class RelationsResolver {
     };
   }
 
-  @Query(() => [RelationDto])
-  async relations(
+  @Query(() => [RelationDto], {
+    deprecationReason: 'Use relationsConnection for paginated results',
+  })
+  async relationsList(
     @Args('namespace', { nullable: true }) namespace?: string,
     @Args('relationTypeId', { type: () => ID, nullable: true })
     relationTypeId?: string,
@@ -71,6 +74,69 @@ export class RelationsResolver {
         ? JSON.stringify(relation.metadata)
         : undefined,
     }));
+  }
+
+  @Query(() => RelationConnection)
+  async relations(
+    @Args('namespace', { nullable: true }) namespace?: string,
+    @Args('relationTypeId', { type: () => ID, nullable: true })
+    relationTypeId?: string,
+    @Args('fromEntityId', { type: () => ID, nullable: true })
+    fromEntityId?: string,
+    @Args('toEntityId', { type: () => ID, nullable: true }) toEntityId?: string,
+    @Args('limit', { type: () => Int, nullable: true, defaultValue: 100 })
+    limit: number = 100,
+    @Args('offset', { type: () => Int, nullable: true, defaultValue: 0 })
+    offset: number = 0,
+  ): Promise<RelationConnection> {
+    // Apply reasonable limits
+    const actualLimit = Math.min(limit, 1000);
+    const actualOffset = Math.max(offset, 0);
+
+    const filters = {
+      namespace,
+      relationTypeId,
+      fromEntityId,
+      toEntityId,
+    };
+
+    // Get data and total count
+    const [relations, totalCount] = await Promise.all([
+      this.relationsService.findAll(
+        filters,
+        actualLimit + 1, // Fetch one extra to check if there's a next page
+        actualOffset,
+      ),
+      this.relationsService.countAll(filters),
+    ]);
+
+    // Check if there are more results
+    const hasNextPage = relations.length > actualLimit;
+    const nodes = hasNextPage ? relations.slice(0, actualLimit) : relations;
+
+    // Build edges with cursors and transform metadata
+    const edges = nodes.map((node, index) => ({
+      node: {
+        ...node,
+        createdAt: node.createdAt || new Date(),
+        metadata: node.metadata ? JSON.stringify(node.metadata) : undefined,
+      },
+      cursor: Buffer.from(`${actualOffset + index}`).toString('base64'),
+    }));
+
+    // Build page info
+    const pageInfo = {
+      hasNextPage,
+      hasPreviousPage: actualOffset > 0,
+      startCursor: edges.length > 0 ? edges[0].cursor : null,
+      endCursor: edges.length > 0 ? edges[edges.length - 1].cursor : null,
+    };
+
+    return {
+      edges,
+      pageInfo,
+      totalCount,
+    };
   }
 
   @Query(() => RelationDto, { nullable: true })

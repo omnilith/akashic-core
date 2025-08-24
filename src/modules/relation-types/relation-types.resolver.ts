@@ -7,11 +7,13 @@ import {
   ID,
   ObjectType,
   Field,
+  Int,
 } from '@nestjs/graphql';
 import { RelationTypesService } from './relation-types.service';
 import { RelationTypeDto } from './dto/relation-type.dto';
 import { CreateRelationTypeInput } from './dto/create-relation-type.input';
 import { UpdateRelationTypeInput } from './dto/update-relation-type.input';
+import { RelationTypeConnection } from './dto/relation-type-connection.dto';
 
 @ObjectType()
 class DeleteRelationTypeResponse {
@@ -51,8 +53,10 @@ export class RelationTypesResolver {
     return await this.relationTypesService.delete(id);
   }
 
-  @Query(() => [RelationTypeDto])
-  async relationTypes(
+  @Query(() => [RelationTypeDto], {
+    deprecationReason: 'Use relationTypesConnection for paginated results',
+  })
+  async relationTypesList(
     @Args('namespace', { nullable: true }) namespace?: string,
     @Args('name', { nullable: true }) name?: string,
   ) {
@@ -64,5 +68,78 @@ export class RelationTypesResolver {
       return result ? [result] : [];
     }
     return await this.relationTypesService.findAll(namespace);
+  }
+
+  @Query(() => RelationTypeConnection)
+  async relationTypes(
+    @Args('namespace', { nullable: true }) namespace?: string,
+    @Args('name', { nullable: true }) name?: string,
+    @Args('limit', { type: () => Int, nullable: true, defaultValue: 100 })
+    limit: number = 100,
+    @Args('offset', { type: () => Int, nullable: true, defaultValue: 0 })
+    offset: number = 0,
+  ): Promise<RelationTypeConnection> {
+    // Special case: if searching by name and namespace, return single result
+    if (name && namespace) {
+      const result = await this.relationTypesService.findByNameAndNamespace(
+        name,
+        namespace,
+      );
+      const nodes = result ? [result] : [];
+      const edges = nodes.map((node, index) => ({
+        node,
+        cursor: Buffer.from(`${index}`).toString('base64'),
+      }));
+      return {
+        edges,
+        pageInfo: {
+          hasNextPage: false,
+          hasPreviousPage: false,
+          startCursor: edges.length > 0 ? edges[0].cursor : null,
+          endCursor: edges.length > 0 ? edges[0].cursor : null,
+        },
+        totalCount: nodes.length,
+      };
+    }
+
+    // Apply reasonable limits
+    const actualLimit = Math.min(limit, 1000);
+    const actualOffset = Math.max(offset, 0);
+
+    // Get data and total count
+    const [relationTypes, totalCount] = await Promise.all([
+      this.relationTypesService.findAll(
+        namespace,
+        actualLimit + 1, // Fetch one extra to check if there's a next page
+        actualOffset,
+      ),
+      this.relationTypesService.countAll(namespace),
+    ]);
+
+    // Check if there are more results
+    const hasNextPage = relationTypes.length > actualLimit;
+    const nodes = hasNextPage
+      ? relationTypes.slice(0, actualLimit)
+      : relationTypes;
+
+    // Build edges with cursors
+    const edges = nodes.map((node, index) => ({
+      node,
+      cursor: Buffer.from(`${actualOffset + index}`).toString('base64'),
+    }));
+
+    // Build page info
+    const pageInfo = {
+      hasNextPage,
+      hasPreviousPage: actualOffset > 0,
+      startCursor: edges.length > 0 ? edges[0].cursor : null,
+      endCursor: edges.length > 0 ? edges[edges.length - 1].cursor : null,
+    };
+
+    return {
+      edges,
+      pageInfo,
+      totalCount,
+    };
   }
 }

@@ -54,8 +54,22 @@ export class EntitiesService {
     );
   }
 
-  async findAll(namespace?: string, entityTypeId?: string) {
-    return await this.entitiesRepo.findAll(namespace, entityTypeId);
+  async findAll(
+    namespace?: string,
+    entityTypeId?: string,
+    limit?: number,
+    offset?: number,
+  ) {
+    return await this.entitiesRepo.findAll(
+      namespace,
+      entityTypeId,
+      limit,
+      offset,
+    );
+  }
+
+  async countAll(namespace?: string, entityTypeId?: string) {
+    return await this.entitiesRepo.countAll(namespace, entityTypeId);
   }
 
   async search(filter: EntityFilterInput) {

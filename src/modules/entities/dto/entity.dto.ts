@@ -10,8 +10,8 @@ export class EntityDto {
   @Field()
   namespace: string;
 
-  @Field(() => ID)
-  entityTypeId: string;
+  @Field(() => ID, { nullable: true })
+  entityTypeId: string | null;
 
   @Field(() => Int)
   entityTypeVersion: number;
@@ -19,9 +19,9 @@ export class EntityDto {
   @Field(() => JSONScalar)
   data: any;
 
-  @Field()
-  createdAt: Date;
+  @Field({ nullable: true })
+  createdAt: Date | null;
 
-  @Field()
-  updatedAt: Date;
+  @Field({ nullable: true })
+  updatedAt: Date | null;
 }

@@ -23,6 +23,6 @@ export class RelationTypeDto {
   @Field(() => Int)
   version: number;
 
-  @Field()
-  createdAt: Date;
+  @Field({ nullable: true })
+  createdAt: Date | null;
 }

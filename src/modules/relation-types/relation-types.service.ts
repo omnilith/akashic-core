@@ -192,8 +192,12 @@ export class RelationTypesService {
     return { id, deleted: true };
   }
 
-  async findAll(namespace?: string) {
-    return await this.repo.findAll(namespace);
+  async findAll(namespace?: string, limit?: number, offset?: number) {
+    return await this.repo.findAll(namespace, limit, offset);
+  }
+
+  async countAll(namespace?: string) {
+    return await this.repo.countAll(namespace);
   }
 
   async findById(id: string) {
