@@ -1,7 +1,10 @@
 // src/modules/events/events.service.ts
 import { Injectable } from '@nestjs/common';
 import { EventsRepo } from './events.repo';
-import { DrizzleTransaction } from '../../db/drizzle.service';
+
+// Type alias for transaction - the actual type is defined in the repo layer
+// This allows the service to accept transactions without importing DB-specific types
+type TransactionHandle = Parameters<EventsRepo['create']>[1];
 
 export interface EventData {
   eventType: string;
@@ -16,7 +19,7 @@ export interface EventData {
 export class EventsService {
   constructor(private eventsRepo: EventsRepo) {}
 
-  async logEvent(eventData: EventData, tx?: DrizzleTransaction) {
+  async logEvent(eventData: EventData, tx?: TransactionHandle) {
     return await this.eventsRepo.create(
       {
         eventType: eventData.eventType,
