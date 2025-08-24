@@ -18,6 +18,7 @@ export const GET_ENTITY_TYPES = gql`
       name
       namespace
       schemaJson
+      version
     }
   }
 `;

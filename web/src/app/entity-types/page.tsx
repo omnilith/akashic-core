@@ -2,6 +2,7 @@
 
 import { GET_ENTITY_TYPES, type EntityType } from '@/lib/queries/entity-types';
 import { useQuery } from '@apollo/client/react';
+import styles from './page.module.css';
 
 export default function EntityTypesPage() {
   const { data, error } = useQuery<{ entityTypes: EntityType[] }>(
@@ -10,9 +11,11 @@ export default function EntityTypesPage() {
 
   if (error) {
     return (
-      <div className="rounded-lg border border-destructive/50 bg-destructive/10 p-4">
-        <p className="text-destructive">Error loading entity types:</p>
-        <p className="mt-1 text-sm text-muted-foreground">{error.message}</p>
+      <div className={styles.container}>
+        <div className={styles.errorBox}>
+          <p className={styles.errorTitle}>Error loading entity types:</p>
+          <p className={styles.errorMessage}>{error.message}</p>
+        </div>
       </div>
     );
   }
@@ -20,58 +23,56 @@ export default function EntityTypesPage() {
   const entityTypes = data?.entityTypes || [];
 
   return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold">Entity Types</h1>
-        <p className="mt-2 text-muted-foreground">
+    <div className={styles.container}>
+      <div className={styles.header}>
+        <h1 className={styles.title}>Entity Types</h1>
+        <p className={styles.subtitle}>
           Manage your ontology definitions and schemas
+        </p>
+        <p className={styles.count}>
+          [{entityTypes.length}] entity types found
         </p>
       </div>
 
       {entityTypes.length === 0 ? (
-        <div className="rounded-lg border border-dashed p-8 text-center">
-          <p className="text-muted-foreground">No entity types found</p>
+        <div className={styles.emptyState}>
+          <p>No entity types found</p>
         </div>
       ) : (
-        <div className="grid gap-4">
+        <div className={styles.grid}>
           {entityTypes.map((type: EntityType) => (
-            <div
-              key={type.id}
-              className="rounded-lg border bg-card p-4 hover:shadow-md transition-shadow"
-            >
-              <div className="flex items-start justify-between">
-                <div className="flex-1">
-                  <h3 className="text-lg font-semibold">{type.name}</h3>
-                  <p className="mt-1 text-sm text-muted-foreground">
-                    {type.namespace} • Version {type.version}
-                  </p>
+            <div key={type.id} className={styles.card}>
+              <div className={styles.cardHeader}>
+                <div className={styles.cardContent}>
+                  <h3 className={styles.cardTitle}>{type.name}</h3>
+                  <div className={styles.cardMeta}>
+                    <span>{type.namespace}</span>
+                    <span>v{type.version}</span>
+                  </div>
                   {type.description && (
-                    <p className="mt-2 text-sm">{type.description}</p>
+                    <p className={styles.cardDescription}>{type.description}</p>
                   )}
                 </div>
-                <div className="text-xs text-muted-foreground">
+                <div className={styles.cardId}>
                   {type.id.substring(0, 8)}...
                 </div>
               </div>
 
               {type.schemaJson?.properties && (
-                <div className="mt-3 border-t pt-3">
-                  <p className="text-xs font-medium text-muted-foreground mb-1">
-                    Fields ({Object.keys(type.schemaJson.properties).length})
+                <div className={styles.fieldsSection}>
+                  <p className={styles.fieldsTitle}>
+                    Fields [{Object.keys(type.schemaJson.properties).length}]
                   </p>
-                  <div className="flex flex-wrap gap-1">
+                  <div className={styles.fieldsList}>
                     {Object.keys(type.schemaJson.properties)
                       .slice(0, 5)
                       .map((field) => (
-                        <span
-                          key={field}
-                          className="inline-block rounded bg-muted px-2 py-0.5 text-xs"
-                        >
+                        <span key={field} className={styles.fieldTag}>
                           {field}
                         </span>
                       ))}
                     {Object.keys(type.schemaJson.properties).length > 5 && (
-                      <span className="text-xs text-muted-foreground">
+                      <span className={styles.moreFields}>
                         +{Object.keys(type.schemaJson.properties).length - 5}{' '}
                         more
                       </span>
