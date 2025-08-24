@@ -6,7 +6,12 @@ export interface EntityType {
   namespace: string;
   description?: string;
   version: number;
-  schemaJson: any;
+  schemaJson: {
+    type: string;
+    properties?: Record<string, unknown>;
+    required?: string[];
+    additionalProperties?: boolean;
+  };
   createdAt: string;
   updatedAt: string;
 }

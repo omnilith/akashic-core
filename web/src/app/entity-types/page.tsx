@@ -3,13 +3,16 @@
 import { GET_ENTITY_TYPES, type EntityType } from '@/lib/queries/entity-types';
 import { useQuery } from '@apollo/client/react';
 import { useState, useMemo } from 'react';
+import CreateEntityTypeForm from '@/components/CreateEntityTypeForm';
 import styles from './page.module.css';
 
 export default function EntityTypesPage() {
-  const { data, error } = useQuery<{ entityTypes: EntityType[] }>(
+  const { data, error, refetch } = useQuery<{ entityTypes: EntityType[] }>(
     GET_ENTITY_TYPES,
   );
   const [selectedNamespace, setSelectedNamespace] = useState<string>('all');
+  const [showCreateForm, setShowCreateForm] = useState(false);
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
   const allEntityTypes = useMemo(() => {
     return data?.entityTypes || [];
@@ -25,6 +28,13 @@ export default function EntityTypesPage() {
     return allEntityTypes.filter(et => et.namespace === selectedNamespace);
   }, [allEntityTypes, selectedNamespace]);
 
+  const handleCreateSuccess = () => {
+    setShowCreateForm(false);
+    setSuccessMessage('Entity Type created successfully!');
+    refetch();
+    setTimeout(() => setSuccessMessage(null), 5000);
+  };
+
   if (error) {
     return (
       <div className={styles.container}>
@@ -38,11 +48,38 @@ export default function EntityTypesPage() {
 
   return (
     <div className={styles.container}>
+      {showCreateForm && (
+        <div className={styles.modal}>
+          <div className={styles.modalContent}>
+            <CreateEntityTypeForm
+              onSuccess={handleCreateSuccess}
+              onCancel={() => setShowCreateForm(false)}
+            />
+          </div>
+        </div>
+      )}
+
+      {successMessage && (
+        <div className={styles.successBanner}>
+          {successMessage}
+        </div>
+      )}
+
       <div className={styles.header}>
-        <h1 className={styles.title}>Entity Types</h1>
-        <p className={styles.subtitle}>
-          Manage your ontology definitions and schemas
-        </p>
+        <div className={styles.headerTop}>
+          <div>
+            <h1 className={styles.title}>Entity Types</h1>
+            <p className={styles.subtitle}>
+              Manage your ontology definitions and schemas
+            </p>
+          </div>
+          <button
+            onClick={() => setShowCreateForm(true)}
+            className={styles.createButton}
+          >
+            + Create Entity Type
+          </button>
+        </div>
         <div className={styles.filterSection}>
           <label className={styles.filterLabel}>Namespace:</label>
           <select 
