@@ -83,6 +83,45 @@ export function resolveTypeId(nameOrId: string): string {
   return nameOrId;
 }
 
+// Async version that queries database for entity type by name
+export async function resolveTypeIdAsync(nameOrId: string): Promise<string> {
+  // First check if it's already a UUID
+  if (
+    nameOrId.match(
+      /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i,
+    )
+  ) {
+    return nameOrId;
+  }
+
+  const config = loadConfig();
+  const lowercaseName = nameOrId.toLowerCase();
+
+  // Check if it's in the alias cache
+  if (config.typeAliases[lowercaseName]) {
+    return config.typeAliases[lowercaseName];
+  }
+
+  // Query database for entity type by name
+  try {
+    const entityTypes = await fetchAllEntityTypes();
+    const matchingType = entityTypes.find(
+      (et: any) => et.name.toLowerCase() === lowercaseName,
+    );
+
+    if (matchingType) {
+      // Cache the alias for future use
+      registerTypeAlias(nameOrId, matchingType.id);
+      return matchingType.id;
+    }
+  } catch (error) {
+    // Fall through to return as-is
+  }
+
+  // Assume it's already a UUID or let it fail downstream
+  return nameOrId;
+}
+
 // Smart entity ID resolution - supports partial matching
 export async function resolveEntityId(
   partialId: string,

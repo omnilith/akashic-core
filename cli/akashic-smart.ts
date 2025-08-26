@@ -168,7 +168,7 @@ const commands = {
       const fields = schemaHelper.parseSchema(schema);
 
       // Get entity type info
-      const typeId = schemaHelper.resolveTypeId(typeName);
+      const typeId = await schemaHelper.resolveTypeIdAsync(typeName);
 
       let entityData: any;
 
@@ -275,7 +275,7 @@ const commands = {
     }
 
     try {
-      const typeId = schemaHelper.resolveTypeId(typeName);
+      const typeId = await schemaHelper.resolveTypeIdAsync(typeName);
 
       const query = `
         query GetEntities($namespace: String, $entityTypeId: String) {
@@ -346,7 +346,7 @@ const commands = {
 
     try {
       // Resolve type name to type ID for filtering
-      const typeId = schemaHelper.resolveTypeId(typeName);
+      const typeId = await schemaHelper.resolveTypeIdAsync(typeName);
 
       // Get current entity data - filter by type for efficiency
       const query = `
@@ -442,7 +442,7 @@ const commands = {
   },
 
   // Create a new entity type
-  async createType(args: string[]) {
+  async createType(_args: string[]) {
     console.log(`\n${colors.cyan}Create New Entity Type${colors.reset}\n`);
 
     // Get type name and namespace
@@ -571,7 +571,7 @@ const commands = {
   },
 
   // Create a new relation type
-  async createRelationType(args: string[]) {
+  async createRelationType(_args: string[]) {
     console.log(`\n${colors.cyan}Create New Relation Type${colors.reset}\n`);
 
     // Get all entity types for selection
@@ -653,7 +653,7 @@ const commands = {
   },
 
   // Create a relation between two entities
-  async link(args: string[]) {
+  async link(_args: string[]) {
     console.log(`\n${colors.cyan}Create Relation${colors.reset}\n`);
 
     // Get relation types for selection
@@ -788,7 +788,7 @@ const commands = {
 
   // List relations
   async listRelations(args: string[]) {
-    let filters: any = {};
+    const filters: any = {};
 
     // Parse filters
     for (let i = 0; i < args.length; i++) {
@@ -853,14 +853,16 @@ const commands = {
 
   // Search for entities by field values
   async search(args: string[]) {
-    const parseArgs = () => {
+    const parseArgs = async () => {
       const options: any = {
         filter: {},
       };
 
       for (let i = 0; i < args.length; i++) {
         if (args[i] === '--type' && args[i + 1]) {
-          options.filter.entityTypeId = schemaHelper.resolveTypeId(args[i + 1]);
+          options.filter.entityTypeId = await schemaHelper.resolveTypeIdAsync(
+            args[i + 1],
+          );
           i++;
         } else if (args[i] === '--namespace' && args[i + 1]) {
           options.filter.namespace = args[i + 1];
@@ -876,7 +878,7 @@ const commands = {
                 options.filter.data = { [key]: value };
               }
             }
-          } catch (e) {
+          } catch {
             console.error(`Invalid query format: ${args[i + 1]}`);
           }
           i++;
@@ -884,7 +886,7 @@ const commands = {
           try {
             const filterJson = JSON.parse(args[i + 1]);
             options.filter = { ...options.filter, ...filterJson };
-          } catch (e) {
+          } catch {
             console.error(`Invalid filter JSON: ${args[i + 1]}`);
           }
           i++;
@@ -910,7 +912,7 @@ const commands = {
       return options;
     };
 
-    const options = parseArgs();
+    const options = await parseArgs();
 
     console.log(`\n${colors.cyan}Searching entities...${colors.reset}`);
 
@@ -947,7 +949,7 @@ const commands = {
         `\n${colors.green}Found ${entities.length} of ${total} total matching entities:${colors.reset}\n`,
       );
 
-      const typeIds = [...new Set(entities.map((e: any) => e.entityTypeId))];
+      // const typeIds = [...new Set(entities.map((e: any) => e.entityTypeId))];
       const typesQuery = `
         query GetTypes {
           entityTypes {
@@ -957,12 +959,12 @@ const commands = {
         }
       `;
       const typesResult = await schemaHelper.graphqlRequest(typesQuery);
-      const typeMap = new Map(
+      const typeMap = new Map<string, string>(
         typesResult.entityTypes.map((t: any) => [t.id, t.name]),
       );
 
       entities.forEach((entity: any) => {
-        const typeName = typeMap.get(entity.entityTypeId) || 'Unknown';
+        const typeName: string = typeMap.get(entity.entityTypeId) || 'Unknown';
         console.log(
           `${colors.bright}[${typeName}] ${entity.id}${colors.reset}`,
         );
@@ -1501,7 +1503,7 @@ const commands = {
       const entityMap = new Map(
         entitiesResult.entities.map((e: any) => [e.id, e]),
       );
-      const entityTypeMap = new Map(
+      const entityTypeMap = new Map<string, string>(
         typesResult.entityTypes.map((t: any) => [t.id, t.name]),
       );
       const relationTypeMap = new Map(
@@ -1529,7 +1531,8 @@ const commands = {
       // Helper function to get entity preview
       const getEntityPreview = (entity: any): string => {
         const data = entity.data;
-        const typeName = entityTypeMap.get(entity.entityTypeId) || 'Entity';
+        const typeName: string =
+          entityTypeMap.get(entity.entityTypeId) || 'Entity';
 
         // Try to find a good display field
         let preview = '';
@@ -1653,7 +1656,7 @@ const commands = {
   },
 
   // Advanced query builder for complex searches
-  async query(args: string[]) {
+  async query(_args: string[]) {
     console.log(`\n${colors.cyan}Query Builder${colors.reset}\n`);
 
     // Interactive query building
@@ -1984,7 +1987,7 @@ const commands = {
 
     try {
       // Resolve type ID if needed
-      const typeId = schemaHelper.resolveTypeId(typeNameOrId);
+      const typeId = await schemaHelper.resolveTypeIdAsync(typeNameOrId);
 
       // Fetch the entity type with full details
       const query = `
@@ -2187,7 +2190,7 @@ const commands = {
     const healthChecker = new HealthChecker();
 
     // Parse command line options
-    let options: any = {};
+    const options: any = {};
     let exportPath: string | undefined;
     let autoFix = false;
     let safeOnly = true;
@@ -2613,14 +2616,16 @@ ${colors.cyan}Environment Variables:${colors.reset}
 
   // Search entities - moved to commands.search
   async searchEntities_removed(args: string[]) {
-    const parseArgs = () => {
+    const parseArgs = async () => {
       const options: any = {
         filter: {},
       };
 
       for (let i = 0; i < args.length; i++) {
         if (args[i] === '--type' && args[i + 1]) {
-          options.filter.entityTypeId = schemaHelper.resolveTypeId(args[i + 1]);
+          options.filter.entityTypeId = await schemaHelper.resolveTypeIdAsync(
+            args[i + 1],
+          );
           i++;
         } else if (args[i] === '--namespace' && args[i + 1]) {
           options.filter.namespace = args[i + 1];
@@ -2639,7 +2644,7 @@ ${colors.cyan}Environment Variables:${colors.reset}
                 options.filter.data = { [key]: value };
               }
             }
-          } catch (e) {
+          } catch {
             console.error(`Invalid query format: ${args[i + 1]}`);
           }
           i++;
@@ -2648,7 +2653,7 @@ ${colors.cyan}Environment Variables:${colors.reset}
           try {
             const filterJson = JSON.parse(args[i + 1]);
             options.filter = { ...options.filter, ...filterJson };
-          } catch (e) {
+          } catch {
             console.error(`Invalid filter JSON: ${args[i + 1]}`);
           }
           i++;
@@ -2676,7 +2681,7 @@ ${colors.cyan}Environment Variables:${colors.reset}
       return options;
     };
 
-    const options = parseArgs();
+    const options = await parseArgs();
 
     // Interactive mode if no filter provided
     if (
@@ -2705,7 +2710,7 @@ ${colors.cyan}Environment Variables:${colors.reset}
         options.filter.namespace = answers.namespace;
       }
       if (answers.entityType) {
-        options.filter.entityTypeId = schemaHelper.resolveTypeId(
+        options.filter.entityTypeId = await schemaHelper.resolveTypeIdAsync(
           answers.entityType,
         );
       }
@@ -2719,7 +2724,7 @@ ${colors.cyan}Environment Variables:${colors.reset}
               options.filter.data = { [key]: value };
             }
           }
-        } catch (e) {
+        } catch {
           console.error('Invalid query format');
           return;
         }
@@ -2762,7 +2767,7 @@ ${colors.cyan}Environment Variables:${colors.reset}
       );
 
       // Get entity type names for display
-      const typeIds = [...new Set(entities.map((e: any) => e.entityTypeId))];
+      // const typeIds = [...new Set(entities.map((e: any) => e.entityTypeId))];
       const typesQuery = `
         query GetTypes {
           entityTypes {
@@ -2772,13 +2777,13 @@ ${colors.cyan}Environment Variables:${colors.reset}
         }
       `;
       const typesResult = await schemaHelper.graphqlRequest(typesQuery);
-      const typeMap = new Map(
+      const typeMap = new Map<string, string>(
         typesResult.entityTypes.map((t: any) => [t.id, t.name]),
       );
 
       // Display results
       entities.forEach((entity: any) => {
-        const typeName = typeMap.get(entity.entityTypeId) || 'Unknown';
+        const typeName: string = typeMap.get(entity.entityTypeId) || 'Unknown';
         console.log(
           `${colors.bright}[${typeName}] ${entity.id}${colors.reset}`,
         );
