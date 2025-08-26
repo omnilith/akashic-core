@@ -1,38 +1,8 @@
 # Akashic Core
 
-**A federated creative engine where personal and organizational digital twins share the same ontology, processes are cultural rituals, and the public history of creation is part of the art.**
+**Ontology engine powering The Omnilith creative network**
 
-## Overview
-
-Akashic Core is an ontology-first backend platform for building personal twins that can grow into networks of collaborating nodes. Unlike traditional productivity or digital twin systems, Akashic Core treats data structure as a first-class creative medium.
-
-### Key Principles
-
-- **Ontology-first**: Entity types and relationships are defined as data (JSON Schema), not code
-- **Event-sourced**: Complete append-only history of every change
-- **Process-aware**: Workflows are semantic checklists with guards and actions
-- **Federation-ready**: Personal and organizational twins can link and share while maintaining autonomy
-- **Namespace-isolated**: Global, organizational, and personal data coexist safely
-
-## Architecture
-
-### Core Modules
-
-- **EntityTypes** - Define data schemas as JSON Schema documents
-- **Entities** - Create and validate instances against type definitions
-- **RelationTypes** - Define typed relationships between entity types
-- **Relations** - Create actual links between entity instances
-- **Processes** - Execute step-by-step workflows with state tracking
-- **Events** - Append-only log of all system changes
-- **Views** - Optimized read models (planned)
-
-### Technology Stack
-
-- **Backend**: NestJS with TypeScript
-- **Database**: PostgreSQL with Drizzle ORM
-- **API**: GraphQL with automatic schema generation
-- **Validation**: AJV for JSON Schema validation
-- **Events**: Custom event sourcing implementation
+Akashic Core is an ontology-first backend platform where every participant gets a sovereign namespace to model their creative practice. These personal digital twins can connect through Relations to collaborate while maintaining individual sovereignty.
 
 ## Quick Start
 
@@ -71,226 +41,147 @@ npm run db:migrate
 ### Start Development Server
 
 ```bash
-npm run start:dev
+npm run dev
 ```
 
 Navigate to `http://localhost:3000/graphql` to access the GraphQL Playground.
 
+## CLI Tools
+
+The Akashic Smart CLI provides powerful commands for managing your ontology:
+
+```bash
+# Core commands
+npm run akashic list-types             # List all entity types
+npm run akashic show-type <id>         # Show detailed type structure
+npm run akashic create <type>          # Create new entity
+npm run akashic update <id>            # Update existing entity
+npm run akashic delete <id>            # Delete entity
+npm run akashic relate                 # Create relation between entities
+
+# Health & Monitoring  
+npm run akashic health                 # Run all health checks
+npm run akashic health --severity critical  # Run specific severity
+
+# Data Management
+npm run akashic import <file>          # Import entities from JSON
+npm run akashic export                 # Export all data
+```
+
 ## Core Concepts
 
-### Namespaces
+### Namespaces as Nodes
 
-Data is organized into namespaces for multi-tenancy:
+Every namespace is a sovereign node in the network graph:
+- `person.alice` - Personal digital twins
+- `band.coolgroup` - Collective creative spaces
+- `venue.bluenote` - Physical/institutional nodes
+- `global` - Shared standards and commons
 
-- `global` - Shared entity types and processes
-- `personal.username` - Individual user spaces
-- `org.company` - Organizational workspaces
-- `team.department` - Team-specific areas
-
-### Entity-Centric Design
+### Entity System
 
 Everything is an entity with typed relationships:
 
 ```graphql
-# Define a Project type
-createEntityType(input: {
-  namespace: "personal.you"
-  name: "Project"
-  schema: "{\"type\": \"object\", \"properties\": {...}}"
-})
-
-# Create an actual project
-createEntity(input: {
-  namespace: "personal.you"
-  entityTypeId: "project-type-id"
-  data: "{\"title\": \"Build Personal Twin\", \"status\": \"active\"}"
-})
-```
-
-### Semantic Processes
-
-Workflows are data-driven and reusable:
-
-```graphql
-# Define a weekly review process
-createProcessDefinition(input: {
-  namespace: "personal.you"
-  name: "WeeklyReview"
-  steps: "[{\"id\": \"inbox_zero\", \"label\": \"Clear Inbox\"}, ...]"
-})
-
-# Execute the process
-startProcess(input: {
-  processDefId: "weekly-review-id"
-  namespace: "personal.you"
-})
-```
-
-## API Examples
-
-### Creating Entity Types
-
-```graphql
+# Define an EntityType
 mutation {
-  createEntityType(
-    input: {
-      namespace: "global"
-      name: "Person"
-      schema: "{\"type\": \"object\", \"properties\": {\"name\": {\"type\": \"string\"}, \"email\": {\"type\": \"string\", \"format\": \"email\"}}, \"required\": [\"name\"]}"
-    }
-  ) {
+  createEntityType(input: {
+    namespace: "person.alice"
+    name: "Song"
+    schemaJson: { /* JSON Schema */ }
+  }) {
     id
     name
-    version
-  }
-}
-```
-
-### Linking Entities
-
-```graphql
-mutation {
-  createRelationType(
-    input: {
-      namespace: "personal.you"
-      name: "has_next_action"
-      fromEntityTypeId: "project-type-id"
-      toEntityTypeId: "task-type-id"
-      cardinality: "1..n"
-    }
-  ) {
-    id
   }
 }
 
+# Create an Entity
 mutation {
-  createRelation(
-    input: {
-      namespace: "personal.you"
-      relationTypeId: "has-next-action-id"
-      fromEntityId: "my-project-id"
-      toEntityId: "my-task-id"
-    }
-  ) {
+  createEntity(input: {
+    namespace: "person.alice"
+    entityTypeId: "song-type-id"
+    data: { title: "New Track", bpm: 120 }
+  }) {
     id
   }
 }
 ```
 
-### Process Execution
+### Relations
+
+Connect namespaces while maintaining boundaries:
 
 ```graphql
-# Start a process
 mutation {
-  startProcess(
-    input: { namespace: "personal.you", processDefId: "daily-review-id" }
-  ) {
+  createRelation(input: {
+    relationTypeId: "collaborated-on"
+    fromEntityId: "alice-id"
+    toEntityId: "song-id"
+    data: { role: "producer", split: 0.5 }
+  }) {
     id
-    status
-    currentStep
-  }
-}
-
-# Advance through steps
-mutation {
-  advanceProcess(
-    input: {
-      instanceId: "process-instance-id"
-      stepInput: "{\"notes\": \"Completed inbox review\"}"
-    }
-  ) {
-    status
-    currentStep
   }
 }
 ```
 
-### Event History
+## Project Structure
 
-```graphql
-query {
-  events(namespace: "personal.you", limit: 10) {
-    eventType
-    resourceType
-    payload
-    timestamp
-  }
-}
+```
+src/
+├── modules/          # Core backend modules
+│   ├── entities/     # Entity management
+│   ├── entity-types/ # Entity type definitions
+│   ├── relations/    # Relation management
+│   ├── processes/    # Process system (workflows)
+│   └── events/       # Event sourcing
+├── database/         # Database schema and migrations
+└── lib/             # Shared utilities
+
+cli/
+├── akashic-smart.ts  # Main CLI entry point
+├── schema-helper.ts  # GraphQL client utilities
+└── health-checker.ts # Health check engine
 ```
 
 ## Development
 
-### Database Migrations
+### Testing
 
 ```bash
-# Create new migration after schema changes
-npm run db:generate
-
-# Apply migrations
-npm run db:migrate
-
-# Open database GUI
-npm run db:studio
+npm test                # Run tests
+npm run typecheck       # TypeScript checking
+npm run lint           # ESLint
+npm run akashic health  # Data integrity checks
 ```
 
-### Project Structure
+### Database
 
-```
-src/
-├── db/
-│   ├── schema.ts              # Drizzle table definitions
-│   └── migrations/            # Database migrations
-├── lib/
-│   ├── validation.service.ts  # AJV JSON Schema validation
-│   └── json.scalar.ts         # GraphQL JSON scalar
-├── modules/
-│   ├── entity-types/          # Entity type management
-│   ├── entities/              # Entity CRUD operations
-│   ├── relation-types/        # Relationship type definitions
-│   ├── relations/             # Relationship management
-│   ├── processes/             # Workflow engine
-│   └── events/                # Event sourcing
-└── main.ts                    # Application entry point
+```bash
+npm run db:generate    # Generate migrations
+npm run db:migrate     # Apply migrations
+npm run db:studio      # Open Drizzle Studio
 ```
 
-## Roadmap
+## Documentation
 
-### Immediate (MVP Complete ✅)
+- **[VISION.md](./VISION.md)** - The Omnilith vision and philosophy
+- **[CLAUDE.md](./CLAUDE.md)** - Deep technical documentation and AI context
+- **[Contributing Guidelines](./CONTRIBUTING.md)** - How to contribute
 
-- [x] Core entity and relationship system
-- [x] Process definitions and execution
-- [x] Event sourcing foundation
-- [x] Multi-namespace support
+## The Omnilith
 
-### Next Phase
+This infrastructure powers [The Omnilith](https://omnilith.xyz) - a creative network where:
+- Individuals maintain sovereign digital twins of their creative practice
+- Contribution is transparent and permanently attributed  
+- Value flows automatically based on documented work
+- Digital coordination enables physical creative communities
 
-- [ ] Guards and actions with CEL expressions
-- [ ] Read models and optimized views
-- [ ] Real-time subscriptions via WebSocket
-- [ ] Authentication and authorization
+Learn more about the vision in [VISION.md](./VISION.md).
 
-### Future
+## License
 
-- [ ] Federation between instances
-- [ ] Visual process designer
-- [ ] Advanced querying and graph traversal
-- [ ] Public chronicle and aesthetic views
-
-## Philosophy
-
-Akashic Core embraces the idea that **how we structure information is itself a creative act**. By making ontology a first-class citizen, it enables:
-
-- **Personal knowledge graphs** that evolve with your thinking
-- **Organizational memory** that preserves context and decisions
-- **Creative workflows** that bridge personal and collective intelligence
-- **Living documentation** where the structure is part of the art
-
-The system doesn't impose rigid categories but provides tools for creating your own meaningful structures that can grow and federate with others.
-
-## Contributing
-
-This is currently a personal research project. As it matures, contribution guidelines will be established.
+MIT
 
 ---
 
-_"The Akashic Records are a compendium of all universal events, thoughts, words, emotions and intent ever to have occurred in the past, present, or future." - This system aims to be your personal Akashic record._
+*Building infrastructure for creative sovereignty*
