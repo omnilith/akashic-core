@@ -1,0 +1,159 @@
+types:
+  Project:
+    fields:
+      title:
+        type: string
+        minLength: 1
+        required: true
+      status:
+        type: string
+        enum:
+          - planning
+          - active
+          - done
+        required: true
+      priority:
+        type: string
+        enum:
+          - low
+          - medium
+          - high
+  NextAction:
+    fields:
+      status:
+        type: string
+        enum:
+          - todo
+          - doing
+          - done
+      context:
+        type: string
+        enum:
+          - computer
+          - phone
+          - errands
+      description:
+        type: string
+  Track:
+    fields:
+      bpm:
+        type: number
+        min: 60
+        max: 200
+      genre:
+        type: string
+      title:
+        type: string
+        minLength: 1
+        required: true
+      artist:
+        type: string
+      status:
+        type: string
+        enum:
+          - unreleased
+          - demo
+          - released
+          - archived
+        required: true
+      duration:
+        type: number
+      sourceYear:
+        type: number
+      description:
+        type: string
+  Convergence:
+    fields:
+      notes:
+        type: string
+        description: Additional thoughts about this convergence
+      title:
+        type: string
+        description: Brief name for this convergence
+        required: true
+      status:
+        type: string
+        enum:
+          - latent
+          - active
+          - converging
+          - converged
+          - diverged
+        description: >-
+          latent: not started, active: in progress, converging: approaching
+          desired state, converged: achieved, diverged: abandoned or failed
+        required: true
+      actions:
+        type: array
+        description: Specific actions that move reality toward the desired state
+      catalyst:
+        type: string
+        description: What could accelerate this convergence
+      evidence:
+        type: array
+        description: Observable evidence that convergence is occurring
+      startedAt:
+        type: datetime
+      matterType:
+        type: string
+        enum:
+          - physical
+          - digital
+          - mental
+          - social
+          - energetic
+          - hybrid
+        description: What type of matter/reality is being rearranged
+      resistance:
+        type: string
+        description: What forces oppose this convergence
+      convergedAt:
+        type: datetime
+      timeHorizon:
+        type: string
+        enum:
+          - now
+          - today
+          - week
+          - month
+          - quarter
+          - year
+          - lifetime
+        description: Expected timeframe for convergence
+      currentState:
+        type: string
+        description: The current configuration that needs to change
+        required: true
+      dependencies:
+        type: array
+        description: Other convergences that must occur first
+      desiredState:
+        type: string
+        description: The configuration of reality you want to achieve
+        required: true
+      energyRequired:
+        type: string
+        enum:
+          - minimal
+          - moderate
+          - significant
+          - intense
+        description: Amount of energy/effort needed
+      convergenceType:
+        type: string
+        enum:
+          - immediate
+          - project
+          - vision
+          - habit
+          - milestone
+        description: >-
+          immediate: single action, project: multi-step, vision: long-term
+          aspiration, habit: recurring pattern, milestone: checkpoint
+        required: true
+relations:
+  - name: has_next_action
+    from: Project
+    to: NextAction
+    cardinality: 1..n
+namespace: personal.you

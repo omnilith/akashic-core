@@ -17,63 +17,59 @@ import {
 // Convert JSON Schema back to YAML field format
 function schemaToYamlField(schema: any): YamlField | string {
   const field: YamlField = { type: schema.type };
-  const parts: string[] = [schema.type];
 
   // Check for special patterns that map to our shortcuts
   if (schema.type === 'string' && schema.pattern) {
     // Check for email pattern
     if (schema.pattern.includes('@')) {
-      return 'email';
+      return { type: 'email' };
     }
     // Check for URL pattern
     if (schema.pattern.includes('https?://')) {
-      return 'url';
+      return { type: 'url' };
     }
     // Check for UUID pattern
     if (schema.pattern.includes('[0-9a-f]{8}-')) {
-      return 'uuid';
+      return { type: 'uuid' };
     }
     // Check for date patterns
     if (schema.pattern.includes('\\d{4}-\\d{2}-\\d{2}T')) {
-      return 'datetime';
+      return { type: 'datetime' };
     }
     if (schema.pattern === '^\\d{4}-\\d{2}-\\d{2}$') {
-      return 'date';
+      return { type: 'date' };
     }
     field.pattern = schema.pattern;
   }
 
   // Check for text (large string)
   if (schema.type === 'string' && schema.maxLength && schema.maxLength > 1000) {
-    parts[0] = 'text';
+    field.type = 'text';
   }
 
-  // Handle required (this is handled at parent level in JSON Schema)
-  // We'll mark it when processing the parent
+  // Handle format for dates
+  if (schema.format === 'date-time') {
+    field.type = 'datetime';
+  } else if (schema.format === 'date') {
+    field.type = 'date';
+  }
 
   // Handle unique
   if (schema.unique) {
-    parts.push('unique');
+    field.unique = true;
   }
 
-  // Handle enum
+  // Handle enum - always use expanded format
   if (schema.enum) {
     field.enum = schema.enum;
-    // For simple enums, use shorthand
-    if (schema.enum.length <= 4) {
-      parts.push(`enum[${schema.enum.join('|')}]`);
-      delete field.enum;
-    }
   }
 
   // Handle numeric constraints
   if (schema.minimum !== undefined) {
     field.min = schema.minimum;
-    parts.push(`min:${schema.minimum}`);
   }
   if (schema.maximum !== undefined) {
     field.max = schema.maximum;
-    parts.push(`max:${schema.maximum}`);
   }
 
   // Handle string constraints
@@ -87,20 +83,11 @@ function schemaToYamlField(schema: any): YamlField | string {
   // Handle default values
   if (schema.default !== undefined) {
     field.default = schema.default;
-    // For simple defaults, use shorthand
-    if (
-      typeof schema.default === 'string' ||
-      typeof schema.default === 'number' ||
-      typeof schema.default === 'boolean'
-    ) {
-      parts.push(`default:${schema.default}`);
-      delete field.default;
-    }
   }
 
   // Handle references
   if (schema.$ref) {
-    return `reference(${schema.$ref})`;
+    return { type: 'reference', reference: schema.$ref };
   }
 
   // Handle description
@@ -108,14 +95,20 @@ function schemaToYamlField(schema: any): YamlField | string {
     field.description = schema.description;
   }
 
-  // If we only have basic type info, return as string
-  if (parts.length === 1 && Object.keys(field).length === 1) {
-    return schema.type;
+  // Handle arrays
+  if (schema.type === 'array') {
+    field.type = 'array';
+    // For arrays, we need to handle items differently
+    // since YamlField doesn't have an items property
+    if (schema.items) {
+      // Just return array type - the items schema gets lost
+      // This is a limitation of the current YamlField interface
+    }
   }
 
-  // If we can express as shorthand, do so
-  if (parts.length > 1 && !field.description && !field.enum && !field.pattern) {
-    return parts.join(', ');
+  // If we only have type, return simple object
+  if (Object.keys(field).length === 1 && field.type) {
+    return { type: field.type };
   }
 
   // Otherwise return full field object
@@ -124,7 +117,7 @@ function schemaToYamlField(schema: any): YamlField | string {
 
 // Convert JSON Schema to YAML EntityType
 function schemaToYamlType(
-  name: string,
+  _name: string,
   schema: any,
   namespace?: string,
 ): YamlEntityType {
@@ -147,10 +140,12 @@ function schemaToYamlType(
 
       // Check if field is required
       if (schema.required && schema.required.includes(fieldName)) {
-        if (typeof yamlField === 'string') {
-          yamlField = yamlField + ', required';
-        } else {
+        // Always use object format for consistency
+        if (typeof yamlField === 'object' && !Array.isArray(yamlField)) {
           yamlField.required = true;
+        } else {
+          // Convert to object if it was a string
+          yamlField = { type: yamlField as string, required: true };
         }
       }
 
@@ -346,9 +341,6 @@ export async function exportToYaml(options?: {
 
     // Collect all unique namespaces
     const allNamespaces = new Set<string>();
-
-    // Group types by namespace for better organization
-    const typesByNamespace = new Map<string, Record<string, YamlEntityType>>();
 
     for (const [namespace, ontology] of ontologiesByNamespace) {
       allNamespaces.add(namespace);
