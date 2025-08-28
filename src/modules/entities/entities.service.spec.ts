@@ -61,7 +61,7 @@ describe('EntitiesService', () => {
         id: entityTypeId,
         name: 'TestType',
         namespace,
-        schemaJson: {
+        schema: {
           type: 'object',
           properties: { name: { type: 'string' }, value: { type: 'number' } },
         },
@@ -91,7 +91,7 @@ describe('EntitiesService', () => {
 
       expect(entityTypesService.findById).toHaveBeenCalledWith(entityTypeId);
       expect(validationService.validateEntityData).toHaveBeenCalledWith(
-        mockEntityType.schemaJson,
+        mockEntityType.schema,
         validData,
       );
       expect(repo.createWithEvent).toHaveBeenCalledWith(
@@ -141,7 +141,7 @@ describe('EntitiesService', () => {
         id: entityTypeId,
         name: 'TestType',
         namespace,
-        schemaJson: {
+        schema: {
           type: 'object',
           properties: { name: { type: 'string' } },
           required: ['name'],
@@ -163,7 +163,7 @@ describe('EntitiesService', () => {
 
       expect(entityTypesService.findById).toHaveBeenCalledWith(entityTypeId);
       expect(validationService.validateEntityData).toHaveBeenCalledWith(
-        mockEntityType.schemaJson,
+        mockEntityType.schema,
         invalidData,
       );
       expect(repo.createWithEvent).not.toHaveBeenCalled();
@@ -274,7 +274,7 @@ describe('EntitiesService', () => {
         id: 'entity-type-uuid-123',
         name: 'TestType',
         namespace: 'default',
-        schemaJson: {
+        schema: {
           type: 'object',
           properties: { name: { type: 'string' }, value: { type: 'number' } },
         },
@@ -304,7 +304,7 @@ describe('EntitiesService', () => {
         mockExistingEntity.entityTypeId,
       );
       expect(validationService.validateEntityData).toHaveBeenCalledWith(
-        mockEntityType.schemaJson,
+        mockEntityType.schema,
         newData,
       );
       expect(repo.updateWithEvent).toHaveBeenCalledWith(entityId, newData, {
@@ -384,7 +384,7 @@ describe('EntitiesService', () => {
         id: 'type-id',
         name: 'TestType',
         namespace: 'default',
-        schemaJson: {
+        schema: {
           type: 'object',
           properties: { name: { type: 'string' } },
           required: ['name'],
@@ -426,7 +426,7 @@ describe('EntitiesService', () => {
         id: 'type-id',
         name: 'TestType',
         namespace: 'default',
-        schemaJson: {
+        schema: {
           type: 'object',
           properties: { name: { type: 'string' } },
         },

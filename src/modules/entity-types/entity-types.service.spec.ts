@@ -70,7 +70,7 @@ describe('EntityTypesService', () => {
         id: 'uuid-123',
         namespace,
         name,
-        schemaJson: validSchema,
+        schema: validSchema,
         version: 1,
         createdAt: new Date(),
       };
@@ -99,7 +99,7 @@ describe('EntityTypesService', () => {
       expect(repo.create).toHaveBeenCalledWith({
         namespace,
         name,
-        schemaJson: validSchema,
+        schema: validSchema,
       });
       expect(eventsService.logEvent).toHaveBeenCalledWith({
         eventType: 'entity_type.created',
@@ -150,7 +150,7 @@ describe('EntityTypesService', () => {
           id: 'uuid-1',
           namespace: 'ns1',
           name: 'Entity1',
-          schemaJson: {},
+          schema: {},
           version: 1,
           createdAt: new Date(),
         },
@@ -158,7 +158,7 @@ describe('EntityTypesService', () => {
           id: 'uuid-2',
           namespace: 'ns2',
           name: 'Entity2',
-          schemaJson: {},
+          schema: {},
           version: 1,
           createdAt: new Date(),
         },
@@ -179,7 +179,7 @@ describe('EntityTypesService', () => {
           id: 'uuid-1',
           namespace,
           name: 'Entity1',
-          schemaJson: {},
+          schema: {},
           version: 1,
           createdAt: new Date(),
         },
@@ -200,7 +200,7 @@ describe('EntityTypesService', () => {
         id: 'uuid-123',
         namespace: 'test',
         name: 'TestEntity',
-        schemaJson: {},
+        schema: {},
         version: 1,
         createdAt: new Date(),
       };
@@ -228,7 +228,7 @@ describe('EntityTypesService', () => {
       id: 'uuid-123',
       namespace: 'test',
       name: 'TestEntity',
-      schemaJson: { type: 'object', properties: { name: { type: 'string' } } },
+      schema: { type: 'object', properties: { name: { type: 'string' } } },
       version: 1,
       createdAt: new Date(),
     };
@@ -279,7 +279,7 @@ describe('EntityTypesService', () => {
       const schemaString = JSON.stringify(newSchema);
       const updatedEntityType = {
         ...mockEntityType,
-        schemaJson: newSchema,
+        schema: newSchema,
         version: 2,
       };
 
@@ -309,7 +309,7 @@ describe('EntityTypesService', () => {
       expect(repo.findById).toHaveBeenCalledWith(mockEntityType.id);
       expect(validationService.validateSchema).toHaveBeenCalledWith(newSchema);
       expect(repo.update).toHaveBeenCalledWith(mockEntityType.id, {
-        schemaJson: newSchema,
+        schema: newSchema,
       });
       expect(eventsService.logEvent).toHaveBeenCalledWith({
         eventType: 'entity_type.updated',
@@ -319,12 +319,12 @@ describe('EntityTypesService', () => {
         payload: {
           before: {
             name: mockEntityType.name,
-            schema: mockEntityType.schemaJson,
+            schema: mockEntityType.schema,
             version: mockEntityType.version,
           },
           after: {
             name: updatedEntityType.name,
-            schema: updatedEntityType.schemaJson,
+            schema: updatedEntityType.schema,
             version: updatedEntityType.version,
           },
         },
@@ -342,7 +342,7 @@ describe('EntityTypesService', () => {
       const updatedEntityType = {
         ...mockEntityType,
         name: newName,
-        schemaJson: newSchema,
+        schema: newSchema,
         version: 2,
       };
 
@@ -371,7 +371,7 @@ describe('EntityTypesService', () => {
 
       expect(repo.update).toHaveBeenCalledWith(mockEntityType.id, {
         name: newName,
-        schemaJson: newSchema,
+        schema: newSchema,
       });
       expect(result).toEqual(updatedEntityType);
     });
@@ -422,7 +422,7 @@ describe('EntityTypesService', () => {
       id: 'uuid-123',
       namespace: 'test',
       name: 'TestEntity',
-      schemaJson: { type: 'object', properties: { name: { type: 'string' } } },
+      schema: { type: 'object', properties: { name: { type: 'string' } } },
       version: 1,
       createdAt: new Date(),
     };
@@ -454,7 +454,7 @@ describe('EntityTypesService', () => {
         namespace: mockEntityType.namespace,
         payload: {
           name: mockEntityType.name,
-          schema: mockEntityType.schemaJson,
+          schema: mockEntityType.schema,
           version: mockEntityType.version,
         },
       });
@@ -504,7 +504,7 @@ describe('EntityTypesService', () => {
         id: 'uuid-123',
         namespace: 'test',
         name: 'TestEntity',
-        schemaJson: {},
+        schema: {},
         version: 1,
         createdAt: new Date(),
       };

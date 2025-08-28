@@ -61,7 +61,7 @@ export class EntityTypesRepo {
   ): Promise<EntityType | null> {
     const updateData: Partial<{
       name: string;
-      schemaJson: unknown;
+      schema: unknown;
       version: ReturnType<typeof sql>;
     }> = {};
 
@@ -69,8 +69,8 @@ export class EntityTypesRepo {
       updateData.name = updates.name;
     }
 
-    if (updates.schemaJson !== undefined) {
-      updateData.schemaJson = updates.schemaJson;
+    if (updates.schema !== undefined) {
+      updateData.schema = updates.schema;
       updateData.version = sql`${entityType.version} + 1`;
     }
 

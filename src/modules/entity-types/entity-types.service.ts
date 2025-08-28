@@ -31,7 +31,7 @@ export class EntityTypesService {
     const entityType = await this.repo.create({
       namespace,
       name,
-      schemaJson: JSON.parse(schemaString),
+      schema: JSON.parse(schemaString) as Record<string, unknown>,
     });
 
     await this.eventsService.logEvent({
@@ -57,7 +57,7 @@ export class EntityTypesService {
 
     const updates: Partial<{
       name: string;
-      schemaJson: unknown;
+      schema: unknown;
     }> = {};
 
     if (name !== undefined) {
@@ -75,7 +75,7 @@ export class EntityTypesService {
         );
       }
 
-      updates.schemaJson = schemaJson;
+      updates.schema = schemaJson;
     }
 
     const updated = await this.repo.update(id, updates);
@@ -92,12 +92,12 @@ export class EntityTypesService {
       payload: {
         before: {
           name: existing.name,
-          schema: existing.schemaJson,
+          schema: existing.schema as Record<string, unknown>,
           version: existing.version,
         },
         after: {
           name: updated.name,
-          schema: updated.schemaJson,
+          schema: updated.schema as Record<string, unknown>,
           version: updated.version,
         },
       },
@@ -132,7 +132,7 @@ export class EntityTypesService {
       namespace: existing.namespace,
       payload: {
         name: existing.name,
-        schema: existing.schemaJson,
+        schema: existing.schema as Record<string, unknown>,
         version: existing.version,
       },
     });

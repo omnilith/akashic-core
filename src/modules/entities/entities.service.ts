@@ -22,7 +22,7 @@ export class EntitiesService {
 
     // 2. Validate the data against the schema (outside transaction)
     const validation = this.validationService.validateEntityData(
-      entityType.schemaJson as Record<string, unknown>,
+      entityType.schema as Record<string, unknown>,
       data,
     );
 
@@ -87,7 +87,7 @@ export class EntitiesService {
 
     // 3. Validate the new data against the schema (outside transaction)
     const validation = this.validationService.validateEntityData(
-      entityType.schemaJson as Record<string, unknown>,
+      entityType.schema as Record<string, unknown>,
       data,
     );
 

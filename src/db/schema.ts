@@ -12,7 +12,7 @@ export const entityType = pgTable('entity_type', {
   namespace: text('namespace').notNull(),
   name: text('name').notNull(),
   version: integer('version').notNull().default(1),
-  schemaJson: jsonb('schema_json').notNull(),
+  schema: jsonb('schema_json').notNull(),
   createdAt: timestamp('created_at').defaultNow(),
 });
 
