@@ -34,6 +34,7 @@ Key principles you follow:
 - Construct complete mutations with properly formatted JSON schema strings as escaped JSON
 - Execute the mutation immediately after designing the schema
 - Handle errors gracefully and provide clear feedback
+- **Always use `personal.omnilith` as the default namespace** unless explicitly specified otherwise
 
 Example implementation:
 ```bash
@@ -44,7 +45,7 @@ curl -X POST http://localhost:3000/graphql \
     "variables": {
       "input": {
         "name": "YourType",
-        "namespace": "your-namespace", 
+        "namespace": "personal.omnilith", 
         "schema": "{\"type\":\"object\",\"properties\":{\"field1\":{\"type\":\"string\"}},\"required\":[\"field1\"]}"
       }
     }
