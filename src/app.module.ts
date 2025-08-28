@@ -1,4 +1,5 @@
 import { Module } from '@nestjs/common';
+import { ConfigModule } from '@nestjs/config';
 import { AppController } from './app.controller';
 import { GraphQLModule } from '@nestjs/graphql';
 import { ApolloDriver, ApolloDriverConfig } from '@nestjs/apollo';
@@ -14,6 +15,11 @@ import { JSONScalar } from './lib/json.scalar';
 
 @Module({
   imports: [
+    // Load .env files properly with NestJS ConfigModule
+    ConfigModule.forRoot({
+      isGlobal: true, // Makes ConfigService available everywhere
+      envFilePath: '.env', // Load .env file
+    }),
     GraphQLModule.forRoot<ApolloDriverConfig>({
       driver: ApolloDriver,
       autoSchemaFile: true,

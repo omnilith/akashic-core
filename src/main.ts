@@ -39,6 +39,9 @@ async function bootstrap() {
   console.log(`🚀 Application is running on: http://localhost:${port}`);
   console.log(`📚 API Documentation: http://localhost:${port}/api`);
   console.log(`🎮 GraphQL Playground: http://localhost:${port}/graphql`);
+  console.log(
+    `🗄️  Database: ${process.env.DATABASE_URL?.split('/').pop()?.split('?')[0] || 'unknown'}`,
+  );
 }
 
 void bootstrap();

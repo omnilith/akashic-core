@@ -1,4 +1,5 @@
 import { Injectable, OnModuleDestroy } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import {
   drizzle,
   NodePgDatabase,
@@ -19,11 +20,16 @@ export class DrizzleService implements OnModuleDestroy {
   public readonly db: NodePgDatabase<typeof schema>;
   private readonly pool: Pool;
 
-  constructor() {
+  constructor(private configService: ConfigService) {
+    // Get database URL from ConfigService (NestJS way)
+    const databaseUrl = this.configService.get<string>(
+      'DATABASE_URL',
+      'postgresql://localhost:5432/akashic', // fallback
+    );
+
     // Create the PostgreSQL connection pool
     this.pool = new Pool({
-      connectionString:
-        process.env.DATABASE_URL || 'postgresql://localhost:5432/akashic',
+      connectionString: databaseUrl,
     });
 
     // Create the Drizzle instance with the pool
