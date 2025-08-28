@@ -24,6 +24,7 @@ import { JSONScalar } from './lib/json.scalar';
       driver: ApolloDriver,
       autoSchemaFile: true,
       playground: true,
+      introspection: true,
     }),
     DbModule,
     EntityTypesModule,
